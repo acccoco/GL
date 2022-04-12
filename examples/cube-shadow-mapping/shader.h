@@ -5,6 +5,36 @@
 #include "core/shader.h"
 
 
+class ShaderDepth : public Shader
+{
+    UniformAttributeM4fv m_view{"m_view"};
+    UniformAttributeM4fv m_proj{"m_proj"};
+    UniformAttributeM4fv m_model{"m_model"};
+
+public:
+    ShaderDepth()
+        : Shader(EXAMPLES + "cube-shadow-mapping/distance-to-light.vert",
+                 EXAMPLES + "cube-shadow-mapping/distance-to-light.frag")
+    {
+        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &m_model})
+            u_attr->init_location(program_id);
+    }
+
+    void update_per_frame(const glm::mat4 &view, const glm::mat4 &proj)
+    {
+        m_view.set(view);
+        m_proj.set(proj);
+    }
+
+    void draw(const Model &model)
+    {
+        glUseProgram(program_id);
+        m_model.set(model.model_matrix());
+        model.mesh.draw();
+    }
+};
+
+
 class ShaderShadowMapping : public Shader
 {
     UniformAttributeM4fv m_view{"m_view"};
@@ -20,7 +50,8 @@ class ShaderShadowMapping : public Shader
 
 public:
     ShaderShadowMapping()
-        : Shader(EXAMPLES + "shadow-mapping/shadow-mapping.vert", EXAMPLES + "shadow-mapping/shadow-mapping.frag")
+        : Shader(EXAMPLES + "cube-shadow-mapping/shadow-mapping.vert",
+                 EXAMPLES + "cube-shadow-mapping/shadow-mapping.frag")
     {
         for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &m_model, &has_diffuse, &tex_diffuse, &kd,
                                                           &light_pos, &camera_pos, &shadow_map_cube, &ks})
@@ -53,7 +84,6 @@ public:
             tex_diffuse.set(0);
         }
 
-        // fixme 设置为 0 会出问题？？？？
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_CUBE_MAP, shadow_map_cube_);
         shadow_map_cube.set(1);

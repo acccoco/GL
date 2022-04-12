@@ -8,10 +8,11 @@
 #include "core/misc.h"
 #include "core/model.h"
 #include "core/texture.h"
+
 #include "function/skybox/skybox.h"
 
-#include "shader/depth/depth.h"
 #include "shader/lambert/lambert.h"
+
 #include "./shader.h"
 
 

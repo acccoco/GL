@@ -19,6 +19,7 @@ const std::string MODEL_CUBE = MODEL + "cube/cube.obj";
 const std::string MODEL_SQUARE = MODEL + "square/square.obj";
 const std::string MODEL_LIGHT = MODEL + "light/light.obj";
 const std::string MODLE_FLOOR = MODEL + "floor/floor.obj";
+const std::string MODEL_GRAY_FLOOR = MODEL + "gray-floor/gray-floor.obj";
 
 // texture
 const std::string TEX_FACE = TEXTURE + "awesomeface.jpg";

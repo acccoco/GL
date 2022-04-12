@@ -10,11 +10,11 @@
 
 
 struct Model {
-    Mesh      mesh;
+    Mesh mesh;
     glm::vec3 pos{0, 0, 0};
     struct {
-        GLuint id  = 0;
-        bool   has = false;
+        GLuint id = 0;
+        bool has = false;
     } tex_diffuse;
 
     glm::vec3 color_diffuse{};
@@ -48,7 +48,7 @@ struct Model {
             tex_diffuse.has = false;
         } else {
             tex_diffuse.has = true;
-            tex_diffuse.id  = TextureManager::load_texture_(data.tex_diffuse_path);
+            tex_diffuse.id = TextureManager::load_texture_(data.tex_diffuse_path);
         }
     }
 
@@ -59,7 +59,9 @@ struct Model {
 
         std::vector<Model> models;
         models.reserve(data_list.size());
-        for (auto &data: data_list) { models.emplace_back(data); }
+        for (auto &data: data_list) {
+            models.emplace_back(data);
+        }
         return models;
     }
 };
