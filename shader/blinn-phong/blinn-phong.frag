@@ -32,7 +32,8 @@ void main() {
     // specular
     vec3 view_dir = normalize(FragPos - camera_pos);
     vec3 reflect_dir = reflect(light_dir, normal);
-    float spec = pow(max(dot(-view_dir, reflect_dir), 0.f), 25.f);
+    vec3 half_v = normalize(-(light_dir + view_dir) / 2.0);
+    float spec = pow(max(dot(half_v, normal), 0.f), 25.f);
     vec3 specular = ks * light_atten_coff * spec;
 
     // final color with gamma correct

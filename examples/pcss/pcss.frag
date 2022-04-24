@@ -16,8 +16,8 @@ uniform bool has_diffuse;
 uniform sampler2D tex_diffuse;
 uniform vec3 rand_seed;
 
-const float BIAS_BASE = 0.04f;
-const float BIAS_MIN = 0.01f;
+const float BIAS_BASE = 0.1f;
+const float BIAS_MIN = 0.1f;
 const float light_indensity = 2.0f;
 const float light_size = 0.5f;      // assume light size is 0.5
 const float near = 0.1;
@@ -88,7 +88,7 @@ void phong_shading()
     vec3 color = has_diffuse ? pow(texture(tex_diffuse, TexCoord).rgb, vec3(2.2)) : kd;
 
     // ambient
-    g_ambient = 0.15 * color;
+    g_ambient = 0.20 * color;
 
     // diffuse
     vec3 light_dir = normalize(FragPos - light_pos);
@@ -115,7 +115,7 @@ float visibility_pcf(float frag_depth, vec2 frag_uv, float bias)
 {
     float visible_sum = 0.f;
     for (int i = 0; i < NUM_SAMPLES; ++i) {
-        float blocker_depth = texture(shadow_map, frag_uv + static_poisson[i] / 800.f).r;
+        float blocker_depth = texture(shadow_map, frag_uv + static_poisson[i] / 200.f).r;
         visible_sum += frag_depth - bias > blocker_depth ? 0.5f : 1.f;
     }
 
@@ -130,7 +130,7 @@ float visibility_pcss(float frag_depth, vec2 frag_uv, float bias)
     float blocker_depth = 0.f;
     int blocker_cnt = 0;
     for (int i = 0; i < NUM_SAMPLES; ++i) {
-        float depth = texture(shadow_map, frag_uv + static_poisson[i] * blocker_search_radius).r;
+        float depth = texture(shadow_map, frag_uv + poisson_disk[i] * blocker_search_radius).r;
         if (frag_depth - bias < depth) continue;
         ++blocker_cnt;
         blocker_depth += depth;
@@ -145,7 +145,7 @@ float visibility_pcss(float frag_depth, vec2 frag_uv, float bias)
     float visibility = 0.f;
     float filter_radius = penumbra * light_size / near_width * near / frag_depth;
     for (int i = 0; i < NUM_SAMPLES; ++i) {
-        float blocker_depth = texture(shadow_map, frag_uv + static_poisson[i] * filter_radius / 10.0).r;
+        float blocker_depth = texture(shadow_map, frag_uv + poisson_disk[i] * filter_radius / 10.0).r;
         visibility += (frag_depth - bias < blocker_depth) ? 1.0f : 0.0;
     }
 
@@ -166,5 +166,5 @@ void main()
 
     phong_shading();
 
-    FragColor = vec4(pow((g_diffuse + g_specular) * visibility_pcf(frag_depth, frag_uv, bias) + g_ambient, vec3(1.0/2.2)), 1.0);
+    FragColor = vec4(pow((g_diffuse + g_specular) * visibility_pcss(frag_depth, frag_uv, bias) + g_ambient, vec3(1.0/2.2)), 1.0);
 }
