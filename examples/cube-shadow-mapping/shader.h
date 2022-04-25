@@ -53,8 +53,9 @@ public:
         : Shader(EXAMPLES + "cube-shadow-mapping/shadow-mapping.vert",
                  EXAMPLES + "cube-shadow-mapping/shadow-mapping.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &m_model, &has_diffuse, &tex_diffuse, &kd,
-                                                          &light_pos, &camera_pos, &shadow_map_cube, &ks})
+        std::vector<UniformAttribute *> uniforms = {&m_view, &m_proj,    &m_model,    &has_diffuse,     &tex_diffuse,
+                                                    &kd,     &light_pos, &camera_pos, &shadow_map_cube, &ks};
+        for (auto u_attr: uniforms)
             u_attr->init_location(program_id);
     }
 

@@ -25,6 +25,7 @@ protected:
 public:
     Engine()
     {
+        spdlog_init();
         glfw_init();
 
         // create window

@@ -21,6 +21,8 @@ AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
+Cpp11BracedListStyle: true
+# BinPackArguments: false
 
 BreakBeforeBraces: Custom
 BraceWrapping:

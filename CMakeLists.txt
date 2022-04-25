@@ -43,9 +43,11 @@ find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(assimp REQUIRED)
+find_package(spdlog REQUIRED)
 
 set(LIB_LINKS
         glfw
+        spdlog::spdlog
         GLAD
         STB
         IMGUI
