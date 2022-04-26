@@ -5,10 +5,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-const glm::vec3 POSITIVE_Y = {0, 1, 0};
-const glm::vec3 NEGATIVE_Y = {0, -1, 0};
 const glm::vec3 POSITIVE_X = {1, 0, 0};
 const glm::vec3 NEGATIVE_X = {-1, 0, 0};
+const glm::vec3 POSITIVE_Y = {0, 1, 0};
+const glm::vec3 NEGATIVE_Y = {0, -1, 0};
 const glm::vec3 POSITIVE_Z = {0, 0, 1};
 const glm::vec3 NEGATIVE_Z = {0, 0, -1};
 

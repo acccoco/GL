@@ -18,7 +18,7 @@
 struct CubeFramebuffer {
     GLuint frame_buffer{};
     GLuint depth_buffer;
-    GLuint tex_cube;
+    GLuint filtered_env_map;
     const GLsizei size = 1024;
 
     CubeFramebuffer()
@@ -29,7 +29,7 @@ struct CubeFramebuffer {
         depth_buffer = create_depth_buffer(size, size);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
-        tex_cube = create_cube_map(size);
+        filtered_env_map = create_cube_map(size);
     }
 };
 
@@ -65,7 +65,7 @@ class EngineTest : public Engine
 
         auto draw_dir = [&](GLenum textarget, const glm::vec3 &front, const glm::vec3 &up) {
             // textarget: for cube map, specify which face is to be attached
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget, buffer.tex_cube, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget, buffer.filtered_env_map, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glm::mat4 m_view = glm::lookAt(camera.get_pos(), camera.get_pos() + front, up);
@@ -91,7 +91,7 @@ class EngineTest : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport_(0, 0, window.width, window.height);
 
-        cube_visual.draw_as_skybox(camera.view_matrix(), Camera::proj_matrix(), buffer.tex_cube);
+        cube_visual.draw_as_skybox(camera.view_matrix(), Camera::proj_matrix(), buffer.filtered_env_map);
 
         shader_lambert.update_per_fame(Camera::proj_matrix());
         shader_lambert.update_per_fame(camera.view_matrix());

@@ -20,7 +20,7 @@
 struct CubeFramebuffer {
     GLuint frame_buffer{};
     GLuint depth_buffer;
-    GLuint tex_cube;
+    GLuint filtered_env_map;
     const GLsizei size = 1024;
 
     CubeFramebuffer()
@@ -31,7 +31,7 @@ struct CubeFramebuffer {
         depth_buffer = create_depth_buffer(size, size);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
-        tex_cube = create_cube_map(size);
+        filtered_env_map = create_cube_map(size);
     }
 };
 
@@ -81,7 +81,7 @@ protected:
 
         auto draw_dir = [&](GLenum textarget, const glm::vec3 &front, const glm::vec3 &up) {
             // textarget: for cube map, specify which face is to be attached
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget, buffer.tex_cube, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget, buffer.filtered_env_map, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glm::mat4 m_view = glm::lookAt(model_light.pos, model_light.pos + front, up);
@@ -131,21 +131,21 @@ protected:
         switch (scene_switcher) {
             case 0:
                 for (auto &m: model_202)
-                    shader_shadow.draw(m, buffer.tex_cube);
-                shader_shadow.draw(model_floor, buffer.tex_cube);
+                    shader_shadow.draw(m, buffer.filtered_env_map);
+                shader_shadow.draw(model_floor, buffer.filtered_env_map);
                 break;
             case 1:
                 for (auto &m: model_three_obj)
-                    shader_shadow.draw(m, buffer.tex_cube);
+                    shader_shadow.draw(m, buffer.filtered_env_map);
                 break;
             case 2:
                 for (auto &m: model_matrix)
-                    shader_shadow.draw(m, buffer.tex_cube);
+                    shader_shadow.draw(m, buffer.filtered_env_map);
                 break;
             case 3:
                 for (auto &m: model_diona)
-                    shader_shadow.draw(m, buffer.tex_cube);
-                shader_shadow.draw(model_floor, buffer.tex_cube);
+                    shader_shadow.draw(m, buffer.filtered_env_map);
+                shader_shadow.draw(model_floor, buffer.filtered_env_map);
                 break;
             default:;
         }

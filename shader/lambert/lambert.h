@@ -36,6 +36,12 @@ public:
         m_view.set(view);
     }
 
+    void udpate_per_frame(const glm::mat4 &view, const glm::mat4 &proj)
+    {
+        m_proj.set(proj);
+        m_view.set(view);
+    }
+
     void draw(const Model &model)
     {
         glUseProgram(program_id);
