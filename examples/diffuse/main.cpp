@@ -1,5 +1,6 @@
-#include <iostream>
-
+/**
+ * 测试 lambert 材质和 blinn-phong 材质
+ */
 #define GL_SILENCE_DEPRECATION
 #include <glad/glad.h>
 

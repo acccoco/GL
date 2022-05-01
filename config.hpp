@@ -8,7 +8,6 @@ const std::string EXAMPLES = SOURCE + "examples/";
 const std::string MODEL = SOURCE + "model/";
 const std::string SHADER = SOURCE + "shader/";
 const std::string TEXTURE = SOURCE + "texture/";
-const std::string FUNCTION = SOURCE + "function/";
 
 // model
 const std::string MODEL_SPHERE_MATRIX = MODEL + "sphere-matrix/sphere-matrix.obj";
@@ -25,4 +24,8 @@ const std::string MODEL_SPHERE = MODEL + "sphere/sphere.obj";
 // texture
 const std::string TEX_FACE = TEXTURE + "awesomeface.jpg";
 const std::string TEX_FLOOR = TEXTURE + "floor.jpg";
-const std::string TEX_SKY = TEXTURE + "skybox/";
+const std::string TEX_SKY = TEXTURE + "cube-sky-1/";
+const std::string CUBE_CORNELL = TEXTURE + "cube-cornel-box/";
+const std::string CUBE_INDOOR = TEXTURE + "cube-indoor/";
+const std::string CUBE_CATHEDRAL = TEXTURE + "cube-grace-cathedral/";
+const std::string CUBE_SKY2 = TEXTURE + "cube-sky-2/";

@@ -1,4 +1,10 @@
-// https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
+/**
+ * 第一遍：将场景绘制在 texture-2D 上
+ * 第二遍：将 texture-2D 绘制在一个正方形上。
+ * 注：可以进一步在这个正方形生进行后处理，比如模糊什么的。
+ * 参考：https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
+ */
+
 
 #include <iostream>
 
@@ -10,9 +16,9 @@
 #include "core/misc.h"
 #include "core/model.h"
 #include "core/texture.h"
-#include "function/skybox/skybox.h"
-#include "function/tex2d-visual/tex2d-visual.h"
 
+#include "shader/skybox/skybox.h"
+#include "shader/tex2d-visual/tex-visual.h"
 #include "shader/lambert/lambert.h"
 
 
@@ -44,11 +50,12 @@ class EngineTest : public Engine
     ThisFrameBuffer framebuffer;
 
     ShaderLambert shader_lambert;
+    ShaderTexVisual shader_texvisual;
 
     std::vector<Model> three_objs = Model::load_obj(MODEL_THREE_OBJS);
+    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
 
     SkyBox skybox;
-    Tex2DVisual tex_visual;
 
     void init() override
     {
@@ -76,7 +83,7 @@ class EngineTest : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport_(0, 0, window.width, window.height);
 
-        tex_visual.show(framebuffer.tex_color);
+        shader_texvisual.draw(model_square, framebuffer.tex_color);
     }
 
     void tick_gui() override

@@ -2,9 +2,9 @@
 
 #include <vector>
 #include <string>
-#include <iostream>
 #include <queue>
 
+#include <spdlog/spdlog.h>
 #include <assimp/scene.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -26,13 +26,15 @@ static ObjData process_mesh(const aiMesh &ai_mesh, const aiScene &scene, const s
 
 std::vector<ObjData> read_obj(const std::string &file_path)
 {
+    SPDLOG_INFO("load obj: {}...", file_path);
+
     // load file
     Assimp::Importer importer;
     const auto scene = importer.ReadFile(file_path, aiProcess_Triangulate | aiProcess_GenNormals);
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-        std::cout << "fail to load model: " << file_path << std::endl;
+    if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
+        SPDLOG_WARN("fail to load model: {}", file_path);
 
-    // process model
+    // process model, 层序遍历
     auto dir_path = file_path.substr(0, file_path.find_last_of('/')) + '/';
     std::queue<aiNode *> nodes;
     nodes.push(scene->mRootNode);
@@ -42,8 +44,7 @@ std::vector<ObjData> read_obj(const std::string &file_path)
         nodes.pop();
 
         for (int i = 0; i < node->mNumMeshes; ++i) {
-            data_list.push_back(
-                    process_mesh(*scene->mMeshes[node->mMeshes[i]], *scene, dir_path));
+            data_list.push_back(process_mesh(*scene->mMeshes[node->mMeshes[i]], *scene, dir_path));
         }
 
         // process children
@@ -65,8 +66,8 @@ static ObjData process_mesh(const aiMesh &ai_mesh, const aiScene &scene, const s
         vertices.reserve(ai_mesh.mNumVertices * 8);
         for (int j = 0; j < ai_mesh.mNumVertices; ++j) {
             auto pos = ai_mesh.mVertices[j];
-            auto normal = ai_mesh.mNormals[j];     // if (mesh->mNormals)
-            auto uv = ai_mesh.mTextureCoords[0][j];// if (mesh->mTextureCoords[0])
+            auto normal = ai_mesh.mNormals[j];// if (mesh->mNormals)
+            auto uv = ai_mesh.mTextureCoords[0] ? ai_mesh.mTextureCoords[0][j] : aiVector3t<ai_real>(0, 0, 0);
             vertices.insert(vertices.end(), {pos.x, pos.y, pos.z});
             vertices.insert(vertices.end(), {normal.x, normal.y, normal.z});
             vertices.insert(vertices.end(), {uv.x, uv.y});

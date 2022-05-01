@@ -1,4 +1,5 @@
 /**
+ * 环境光照，使用 split sum approximate 实现 specular 光照的计算
  * ref:
  *  - Real Shading in Unreal Engine 4 - Wei Zhi
  *  - LearnOpenGL: https://learnopengl.com/PBR/IBL/Specular-IBL
@@ -12,10 +13,10 @@
 #include "core/engine.h"
 #include "core/model.h"
 #include "core/misc.h"
-#include "function/skybox/skybox.h"
 
-#include "./shader.h"
+#include "shader/skybox/skybox.h"
 #include "shader/lambert/lambert.h"
+#include "./shader.h"
 
 struct SplitSumApproximate {
     GLuint frame_buffer{};
@@ -77,8 +78,6 @@ struct SplitSumApproximate {
                 shader_envmap.draw(model_cube, env_map, roughness);
             }
         }
-
-        SPDLOG_INFO("pre filter env map, done");
     }
 
     void intgrate_brdf()
@@ -93,8 +92,6 @@ struct SplitSumApproximate {
         glViewport(0, 0, LUT_SIZE, LUT_SIZE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader_int_brdf.draw(model_square);
-
-        SPDLOG_INFO("integrate BRDF, done");
     }
 
     static GLuint create_cube_map(GLsizei size)
@@ -167,7 +164,7 @@ class TestEngine : public Engine
         model_square.tex_diffuse.has = true;
         model_square.tex_diffuse.id = split_sum.brdf_lut;
 
-        shader_ibl.init((float)split_sum.TOTAL_CUBE_MIP_LEVELS);
+        shader_ibl.init((float) split_sum.TOTAL_CUBE_MIP_LEVELS);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport_(0, 0, window.width, window.height);
@@ -178,18 +175,18 @@ class TestEngine : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // draw filtered env map as skybox
-        shader_envmap.update_per_frame(camera.view_matrix(), Camera::proj_matrix(), split_sum.TOTAL_CUBE_MIP_LEVELS);
-        shader_envmap.draw(model_cube, split_sum.filtered_env_map, roughness);
+//        shader_envmap.update_per_frame(camera.view_matrix(), Camera::proj_matrix(), split_sum.TOTAL_CUBE_MIP_LEVELS);
+//        shader_envmap.draw(model_cube, split_sum.filtered_env_map, roughness);
 
-        // draw brdf lut on square
-        // shader_lambert.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix());
-        // shader_lambert.draw(model_square);
+         // draw brdf lut on square
+         shader_lambert.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix());
+         shader_lambert.draw(model_square);
 
         // draw obj using ibl
-        shader_ibl.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix(), camera.get_pos());
-        shader_ibl.draw(model_spere, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
-//        for (auto & m : model_sphere_matrix)
-//            shader_ibl.draw(m, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
+//        shader_ibl.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix(), camera.get_pos());
+//        shader_ibl.draw(model_spere, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
+        //        for (auto & m : model_sphere_matrix)
+        //            shader_ibl.draw(m, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
     }
 
     void tick_gui() override

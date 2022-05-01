@@ -1,6 +1,7 @@
 /**
  * usage:
  * model-viewer [model1.obj] [model2.obj] ...
+ * 使用 blinn-phong shader 渲染给定模型
  */
 
 #include <iostream>

@@ -1,3 +1,9 @@
+/**
+ * 首先生成 2D 的 shadow map，然后绘制软/硬阴影
+ * 手动在 pcss.frag 里面去更改阴影类型：shadow-mapping，pcf，pcss
+ */
+
+
 #define GL_SILENCE_DEPRECATION
 #include <glad/glad.h>
 
@@ -8,8 +14,7 @@
 #include "core/model.h"
 #include "core/texture.h"
 
-#include "function/tex2d-visual/tex2d-visual.h"
-
+#include "shader/tex2d-visual/tex-visual.h"
 #include "shader/lambert/lambert.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
@@ -51,13 +56,13 @@ class TestEngine : public Engine
     Model model_light = Model::load_obj(MODEL_LIGHT)[0];
     Model model_floor = Model::load_obj(MODLE_FLOOR)[0];
     Model model_gray_floor = Model::load_obj(MODEL_GRAY_FLOOR)[0];
+    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
 
     ShaderDepth shader_depth;
     ShaderPcss shader_pcss;
     ShaderLambert shader_lambert;
     ShaderBlinnPhong shader_phong;
-
-    Tex2DVisual tex_visual;
+    ShaderTexVisual shader_texvisual;
 
     int scene_switcher = 0;
 
@@ -147,7 +152,7 @@ class TestEngine : public Engine
 
         // debug visual shadow map
         glViewport_(0, 0, window.width / 4, window.height / 4);
-        tex_visual.show(buffer.shadow_map);
+        shader_texvisual.draw(model_square, buffer.shadow_map);
     }
 
     void tick_gui() override

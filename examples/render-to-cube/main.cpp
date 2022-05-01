@@ -1,4 +1,7 @@
-#include <iostream>
+/**
+ * 第一遍：将场景会知道 cube-map 上
+ * 第二遍：将 cube-map 作为天空盒显示出来
+ */
 
 #define GL_SILENCE_DEPRECATION
 #include <glad/glad.h>
@@ -8,9 +11,10 @@
 #include "core/misc.h"
 #include "core/model.h"
 #include "core/texture.h"
-#include "function/skybox/skybox.h"
-#include "function/tex2d-visual/tex2d-visual.h"
 
+
+#include "shader/skybox/skybox.h"
+#include "shader/tex2d-visual/tex-visual.h"
 #include "shader/lambert/lambert.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
@@ -41,12 +45,12 @@ class EngineTest : public Engine
 
     ShaderLambert shader_lambert;
     ShaderBlinnPhong shader_phong;
+    ShaderTexVisual shader_texvisual;
 
     CubeFramebuffer buffer;
 
     SkyBox sky_box;
     CubeMapVisual cube_visual;
-    Tex2DVisual tex2d_visua;
 
     void init() override {
         glDepthFunc(GL_LEQUAL);

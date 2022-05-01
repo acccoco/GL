@@ -36,7 +36,7 @@ static void spdlog_init() {
      * 格式控制：
      * %-4!<flag> 表示左对齐，4位，超出截断
      */
-    spdlog::set_pattern("[%H:%M:%S][%^%L%$][%15!s:%-3!#][%!] %v");
+    spdlog::set_pattern("[%H:%M:%S][%^%L%$][%10!s:%-3!#] %v");
 }
 
 static void glad_init() {

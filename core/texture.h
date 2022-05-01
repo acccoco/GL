@@ -33,11 +33,13 @@ static GLuint load_texture(const std::string &file_path)
     // read file
     int width, height, channels;
 
+    SPDLOG_INFO("load texture: {}...", file_path);
+
     // flip vertical, make sure bottom left is uv(0, 0)
     stbi_set_flip_vertically_on_load(true);
     auto data = stbi_load(file_path.c_str(), &width, &height, &channels, 0);
     if (!data)
-        std::cout << "error on load texture, file path: " << file_path << std::endl;
+        SPDLOG_WARN("error on load texture.");
 
     // create texture and bind
     GLuint texture_id;
@@ -90,14 +92,13 @@ static GLuint load_cube_map(const std::string &positive_x, const std::string &ne
         stbi_image_free(data);
     };
 
-    SPDLOG_INFO("load cube map texture...");
+    SPDLOG_INFO("load cube map texture: {}", positive_x);
     load_set(positive_x, GL_TEXTURE_CUBE_MAP_POSITIVE_X);
     load_set(negative_x, GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
     load_set(positive_y, GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
     load_set(negative_y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
     load_set(positive_z, GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
     load_set(negative_z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
-    SPDLOG_INFO("load cube map texture, done");
 
     /* 多级纹理 */
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

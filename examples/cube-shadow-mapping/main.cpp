@@ -1,3 +1,6 @@
+/**
+ * 生成 cube-map 形式的 shadow map，然后使用 shadow mapping 实现硬阴影。
+ */
 
 #define GL_SILENCE_DEPRECATION
 #include <glad/glad.h>
@@ -9,8 +12,7 @@
 #include "core/model.h"
 #include "core/texture.h"
 
-#include "function/skybox/skybox.h"
-
+#include "shader/skybox/skybox.h"
 #include "shader/lambert/lambert.h"
 
 #include "./shader.h"
