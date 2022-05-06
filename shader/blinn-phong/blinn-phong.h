@@ -11,24 +11,22 @@
 class ShaderBlinnPhong : public Shader
 {
 protected:
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttributeM4fv m_model{"m_model"};
-    UniformAttribute1i has_diffuse{"has_diffuse"};
-    UniformAttribute1i tex_diffuse{"tex_diffuse"};
-    UniformAttribute3fv camera_pos{"camera_pos"};
-    UniformAttribute3fv ks{"ks"};
-    UniformAttribute3fv kd{"kd"};
-    UniformAttribute3fv light_pos{"light_pos"};
-    UniformAttribute1f light_indensity{"light_indensity"};
+    UniformAttributeM4fv m_view{"m_view", this};
+    UniformAttributeM4fv m_proj{"m_proj", this};
+    UniformAttributeM4fv m_model{"m_model", this};
+    UniformAttribute1i has_diffuse{"has_diffuse", this};
+    UniformAttribute1i tex_diffuse{"tex_diffuse", this};
+    UniformAttribute3fv camera_pos{"camera_pos", this};
+    UniformAttribute3fv ks{"ks", this};
+    UniformAttribute3fv kd{"kd", this};
+    UniformAttribute3fv light_pos{"light_pos", this};
+    UniformAttribute1f light_indensity{"light_indensity", this};
 
 public:
     ShaderBlinnPhong()
         : Shader(SHADER + "blinn-phong/blinn-phong.vert", SHADER + "blinn-phong/blinn-phong.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &m_model, &has_diffuse, &tex_diffuse, &kd,
-                                                          &camera_pos, &ks, &light_pos, &light_indensity})
-            u_attr->init_location(program_id);
+        uniform_attrs_location_init();
     }
 
     void init(const glm::mat4 &proj)

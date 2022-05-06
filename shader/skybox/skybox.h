@@ -32,7 +32,7 @@ class CubeMapVisual
     Model model_cube = Model::load_obj(MODEL_CUBE)[0];
 
 public:
-    // after exec, DEPTH_TEST will be enabled
+    /// after exec, DEPTH_TEST will be enabled
     void draw_as_skybox(const glm::mat4 &view, const glm::mat4 &proj, GLuint tex_cube)
     {
         glDisable(GL_DEPTH_TEST);

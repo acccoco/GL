@@ -20,6 +20,7 @@ const std::string MODEL_LIGHT = MODEL + "light/light.obj";
 const std::string MODLE_FLOOR = MODEL + "floor/floor.obj";
 const std::string MODEL_GRAY_FLOOR = MODEL + "gray-floor/gray-floor.obj";
 const std::string MODEL_SPHERE = MODEL + "sphere/sphere.obj";
+const std::string MODEL_BUNNY = MODEL + "bunny/bunny.obj";
 
 // texture
 const std::string TEX_FACE = TEXTURE + "awesomeface.jpg";

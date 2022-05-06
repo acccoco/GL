@@ -9,19 +9,18 @@
 
 class ShaderLambert : public Shader
 {
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttributeM4fv m_model{"m_model"};
-    UniformAttribute1i has_diffuse{"has_diffuse"};
-    UniformAttribute1i tex_diffuse{"tex_diffuse"};
-    UniformAttribute3fv kd{"kd"};
+    UniformAttributeM4fv m_view{"m_view", this};
+    UniformAttributeM4fv m_proj{"m_proj", this};
+    UniformAttributeM4fv m_model{"m_model", this};
+    UniformAttribute1i has_diffuse{"has_diffuse", this};
+    UniformAttribute1i tex_diffuse{"tex_diffuse", this};
+    UniformAttribute3fv kd{"kd", this};
 
 public:
     ShaderLambert()
         : Shader(SHADER + "lambert/lambert.vert", SHADER + "lambert/lambert.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &m_model, &has_diffuse, &tex_diffuse, &kd})
-            u_attr->init_location(program_id);
+        uniform_attrs_location_init();
     }
 
     void init(const glm::mat4 &proj)

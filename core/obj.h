@@ -1,3 +1,6 @@
+/**
+ * 利用 Assimp 库读取 .obj 模型文件
+ */
 #pragma once
 
 #include <vector>
@@ -12,6 +15,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+/**
+ * 从 .obj 中读取出来的数据格式
+ */
 struct ObjData {
     std::vector<float> vertices;
     std::vector<unsigned int> faces;
@@ -28,13 +34,13 @@ std::vector<ObjData> read_obj(const std::string &file_path)
 {
     SPDLOG_INFO("load obj: {}...", file_path);
 
-    // load file
+    /// load file
     Assimp::Importer importer;
     const auto scene = importer.ReadFile(file_path, aiProcess_Triangulate | aiProcess_GenNormals);
     if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
         SPDLOG_WARN("fail to load model: {}", file_path);
 
-    // process model, 层序遍历
+    /// process model, 层序遍历
     auto dir_path = file_path.substr(0, file_path.find_last_of('/')) + '/';
     std::queue<aiNode *> nodes;
     nodes.push(scene->mRootNode);
@@ -47,7 +53,7 @@ std::vector<ObjData> read_obj(const std::string &file_path)
             data_list.push_back(process_mesh(*scene->mMeshes[node->mMeshes[i]], *scene, dir_path));
         }
 
-        // process children
+        /// process children
         for (int i = 0; i < node->mNumChildren; ++i)
             nodes.push(node->mChildren[i]);
     }

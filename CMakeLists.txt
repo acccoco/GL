@@ -17,28 +17,28 @@ endif ()
 include_directories(core ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
 # lib: glad
-add_library(GLAD STATIC libs/glad/src/glad.c)
-target_include_directories(GLAD PUBLIC libs/glad/include)
+add_library(GLAD STATIC ext/glad/src/glad.c)
+target_include_directories(GLAD PUBLIC ext/glad/include)
 
 # lib: stb_image
-add_library(STB STATIC libs/stb_image/src/stb_image.cpp)
-target_include_directories(STB PUBLIC libs/stb_image/include)
+add_library(STB STATIC ext/stb_image/src/stb_image.cpp)
+target_include_directories(STB PUBLIC ext/stb_image/include)
 
 # lib: imgui
 #find_library(COCOA_LIB Cocoa)
 #find_library(IOKit_LIB IOKit)
 #find_library(CoreVideo_LIB CoreVideo)
 add_library(IMGUI STATIC
-        libs/imgui/imgui.cpp
-        libs/imgui/imgui_demo.cpp
-        libs/imgui/imgui_draw.cpp
-        libs/imgui/imgui_tables.cpp
-        libs/imgui/imgui_widgets.cpp
-        libs/imgui/backends/imgui_impl_glfw.cpp
-        libs/imgui/backends/imgui_impl_opengl3.cpp)
-target_include_directories(IMGUI PUBLIC libs/imgui libs/imgui/backends)
+        ext/imgui/imgui.cpp
+        ext/imgui/imgui_demo.cpp
+        ext/imgui/imgui_draw.cpp
+        ext/imgui/imgui_tables.cpp
+        ext/imgui/imgui_widgets.cpp
+        ext/imgui/backends/imgui_impl_glfw.cpp
+        ext/imgui/backends/imgui_impl_opengl3.cpp)
+target_include_directories(IMGUI PUBLIC ext/imgui ext/imgui/backends)
 
-# other libs
+# other ext
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -58,6 +58,8 @@ set(LIB_LINKS
 # all targes
 file(GLOB ALL_EXAMPLES RELATIVE ${CMAKE_SOURCE_DIR}/examples ${CMAKE_SOURCE_DIR}/examples/*)
 foreach (EXAMPLE ${ALL_EXAMPLES})
-    add_executable(${EXAMPLE} ${CMAKE_SOURCE_DIR}/examples/${EXAMPLE}/main.cpp)
-    target_link_libraries(${EXAMPLE} ${LIB_LINKS})
+    if (NOT ${EXAMPLE} STREQUAL ".DS_Store")    # osx hidden file
+        add_executable(${EXAMPLE} ${CMAKE_SOURCE_DIR}/examples/${EXAMPLE}/main.cpp)
+        target_link_libraries(${EXAMPLE} ${LIB_LINKS})
+    endif()
 endforeach ()

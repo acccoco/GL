@@ -9,6 +9,12 @@
 
 static GLuint load_texture(const std::string &file_path);
 
+/**
+ * @brief 纹理资源管理
+ *
+ * 如果多个模型引用同一份纹理，这个类可以避免重复读取文件。
+ * 通过静态 map 实现资源管理
+ */
 class TextureManager
 {
     TextureManager() = default;
@@ -30,18 +36,18 @@ public:
 
 static GLuint load_texture(const std::string &file_path)
 {
-    // read file
+    /// read file
     int width, height, channels;
 
     SPDLOG_INFO("load texture: {}...", file_path);
 
-    // flip vertical, make sure bottom left is uv(0, 0)
+    /// flip vertical, make sure bottom left is uv(0, 0)
     stbi_set_flip_vertically_on_load(true);
     auto data = stbi_load(file_path.c_str(), &width, &height, &channels, 0);
     if (!data)
         SPDLOG_WARN("error on load texture.");
 
-    // create texture and bind
+    /// create texture and bind
     GLuint texture_id;
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -53,26 +59,27 @@ static GLuint load_texture(const std::string &file_path)
     else
         std::cout << "channels error" << std::endl;
 
-    // repeat sample
+    /// repeat sample
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    // scale sample
+    /// scale sample
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // mipmap
+    /// mipmap
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // unbind and close file
+    /// unbind and close file
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
 
     return texture_id;
 }
 
-static GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x, const std::string &positive_y,
-                            const std::string &negative_y, const std::string &positive_z, const std::string &negative_z)
+[[maybe_unused]] static GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x,
+                                             const std::string &positive_y, const std::string &negative_y,
+                                             const std::string &positive_z, const std::string &negative_z)
 {
     GLuint cube_map;
     glGenTextures(1, &cube_map);
@@ -112,8 +119,7 @@ static GLuint load_cube_map(const std::string &positive_x, const std::string &ne
     return cube_map;
 }
 
-
-static GLuint create_depth_buffer(GLsizei width = 1024, GLsizei height = 1024)
+[[maybe_unused]] static GLuint create_depth_buffer(GLsizei width = 1024, GLsizei height = 1024)
 {
     GLuint render_buffer;
     glGenRenderbuffers(1, &render_buffer);

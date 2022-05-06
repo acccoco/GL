@@ -3,10 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 #include <glad/glad.h>
 
-
+class Shader;
 class UniformAttribute
 {
 public:
@@ -16,6 +17,8 @@ public:
     explicit UniformAttribute(std::string name_)
         : name(std::move(name_))
     {}
+
+    UniformAttribute(std::string name_, Shader *shader);
     void init_location(GLuint program_id_)
     {
         program_id = program_id_;
@@ -30,6 +33,10 @@ class UniformAttribute1i : public UniformAttribute
 public:
     explicit UniformAttribute1i(const std::string &name)
         : UniformAttribute(name)
+    {}
+
+    [[maybe_unused]] UniformAttribute1i(const std::string &name, Shader *shader)
+        : UniformAttribute(name, shader)
     {}
 
     void set(int value)
@@ -47,6 +54,10 @@ public:
     explicit UniformAttributeM4fv(const std::string &name)
         : UniformAttribute(name)
     {}
+
+    [[maybe_unused]] UniformAttributeM4fv(const std::string &name, Shader *shader)
+        : UniformAttribute(name, shader)
+    {}
     void set(const glm::mat4 &value)
     {
         glUseProgram(program_id);
@@ -56,11 +67,29 @@ public:
     }
 };
 
+class UniformAttributeM3fv : public UniformAttribute
+{
+public:
+    UniformAttributeM3fv(const std::string &name, Shader *shader)
+        : UniformAttribute(name, shader)
+    {}
+    void set(const glm::mat3 &value)
+    {
+        glUseProgram(program_id);
+        if (location == -1)
+            std::cout << "uniform location error: " << name << std::endl;
+        glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value));
+    }
+};
+
 class UniformAttribute3fv : public UniformAttribute
 {
 public:
     explicit UniformAttribute3fv(const std::string &name)
         : UniformAttribute(name)
+    {}
+    UniformAttribute3fv(const std::string &name, Shader *shader)
+        : UniformAttribute(name, shader)
     {}
     void set(const glm::vec3 &value)
     {
@@ -76,6 +105,9 @@ class UniformAttribute1f : public UniformAttribute
 public:
     explicit UniformAttribute1f(const std::string &name)
         : UniformAttribute(name)
+    {}
+    UniformAttribute1f(const std::string &name, Shader *shader)
+        : UniformAttribute(name, shader)
     {}
     void set(float value)
     {
@@ -93,6 +125,7 @@ class Shader
 {
 protected:
     GLuint program_id;
+    std::vector<UniformAttribute *> attrs;
 
 public:
     Shader(const std::string &vertex_shader, const std::string &fragment_shader)
@@ -100,7 +133,23 @@ public:
         program_id = shader_link(shader_compile(vertex_shader, GL_VERTEX_SHADER),
                                  shader_compile(fragment_shader, GL_FRAGMENT_SHADER));
     }
+
+    void use() const { glUseProgram(program_id); }
+
+    void register_uniform_attribute(UniformAttribute *attr) { attrs.push_back(attr); }
+    void uniform_attrs_location_init()
+    {
+        for (auto attr: attrs) {
+            attr->init_location(program_id);
+        }
+    }
 };
+
+inline UniformAttribute::UniformAttribute(std::string name_, Shader *shader)
+    : name(std::move(name_))
+{
+    shader->register_uniform_attribute(this);
+}
 
 static GLuint shader_compile(const std::string &file_path, GLenum shader_type)
 {

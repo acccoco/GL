@@ -1,9 +1,8 @@
 /**
- * 环境光照，使用 split sum approximate 实现 specular 光照的计算
- * ref:
- *  - Real Shading in Unreal Engine 4 - Wei Zhi
- *  - LearnOpenGL: https://learnopengl.com/PBR/IBL/Specular-IBL
- *  - GAMES202: Real-Time Environment Mapping
+ * @brief 环境光照，使用 split sum approximate 实现 specular 光照的计算
+ * @ref Real Shading in Unreal Engine 4 - Wei Zhi
+ * @ref LearnOpenGL: https://learnopengl.com/PBR/IBL/Specular-IBL
+ * @ref GAMES202: Real-Time Environment Mapping
  */
 
 #define GL_SILENCE_DEPRECATION

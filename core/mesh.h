@@ -7,7 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-// make sure data format <position, normal, uv>
 static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int> &indices = {});
 
 
@@ -21,11 +20,16 @@ public:
     explicit Mesh(const std::vector<float> &vertices)
         : vao_id(vao(vertices)),
           vertex_cnt(static_cast<GLsizei>(vertices.size() / 8)),
-          has_ebo(false) {}
+          has_ebo(false)
+    {}
     Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &faces)
         : vao_id(vao(vertices, faces)),
           vertex_cnt(static_cast<GLsizei>(vertices.size()) / 8),
-          has_ebo(true) {}
+          has_ebo(true)
+    {}
+
+    [[nodiscard]] GLsizei vertex_cnt_get() const { return vertex_cnt; }
+    [[nodiscard]] GLuint vao_get() const { return vao_id; }
 
     void draw() const
     {
@@ -46,8 +50,7 @@ static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int
     // array buffer
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(data.size() * sizeof(float)),
-                 &data[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(data.size() * sizeof(float)), &data[0], GL_STATIC_DRAW);
 
     // vertex attribute
     // attribute: 0-positon, 1-normal, 2-uv
