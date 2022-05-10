@@ -28,6 +28,7 @@ const std::string MODLE_FLOOR = MODEL + "floor/floor.obj";
 const std::string MODEL_GRAY_FLOOR = MODEL + "gray-floor/gray-floor.obj";
 const std::string MODEL_SPHERE = MODEL + "sphere/sphere.obj";
 const std::string MODEL_BUNNY = MODEL + "bunny/bunny.obj";
+const std::string MODEL_CORNER = MODEL + "corner/corner.obj";
 
 
 // texture

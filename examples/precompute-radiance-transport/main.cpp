@@ -78,7 +78,7 @@ class EngineTest : public Engine
 
     void init() override
     {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         /// light
         read_light_sh();
@@ -103,8 +103,8 @@ class EngineTest : public Engine
         shader_ptr.m_model.set(glm::one<glm::mat4>());
         switch (transport_switcher) {
             case 1: glBindVertexArray(VAO_unshadowed); break;
-            case 2: glBindVertexArray(VAO_shadowed); break;
-            case 3: glBindVertexArray(VAO_inter_reflect); break;
+            case 3: glBindVertexArray(VAO_shadowed); break;
+            case 2: glBindVertexArray(VAO_inter_reflect); break;
             default: glBindVertexArray(VAO_unshadowed); break;
         }
         glDrawElements(GL_TRIANGLES, vertex_cnt, GL_UNSIGNED_INT, nullptr);
@@ -117,8 +117,8 @@ class EngineTest : public Engine
         ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
         ImGui::SliderInt("scene switcher", &transport_switcher, 1, 3);
         ImGui::Text("1 = unshadowed");
-        ImGui::Text("2 = shadowed");
-        ImGui::Text("3 = inter reflect");
+        ImGui::Text("2 = inter reflect");
+        ImGui::Text("3 = shadowed");
         ImGui::End();
     }
 };

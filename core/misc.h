@@ -21,3 +21,28 @@ inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height)
     glViewport(x, y, width, height);
 #endif
 }
+
+/**
+ * 设置屏幕上的显示区域
+ * @param width 窗口的宽度
+ * @param height 窗口的长度
+ * @param xcnt 宽分为几份
+ * @param ycnt 长分为几份
+ * @param xidx x 从第几个开始
+ * @param yidx y 从第几个开始
+ * @param xlen 占据几个格子宽
+ * @param ylen 占据几个格子高
+ */
+inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, GLint xidx, GLint yidx, GLint xlen = 1,
+                        GLint ylen = 1)
+{
+    auto x_delta  = width / xcnt;
+    auto y_delta  = height / ycnt;
+    auto x_width  = x_delta * xlen;
+    auto y_height = y_delta * ylen;
+#ifdef __APPLE__
+    glViewport(xidx * x_delta * 2, yidx * y_delta * 2, x_width * 2, y_height * 2);
+#else
+    glViewport(xidx * x_delta, yidx * y_delta, x_width, y_height);
+#endif
+}
