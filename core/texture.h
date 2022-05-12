@@ -24,8 +24,9 @@ public:
     static GLuint load_texture_(const std::string &file_path)
     {
         GLuint tex_id;
-        if (m.find(file_path) == m.end()) {
-            tex_id = load_texture(file_path);
+        if (m.find(file_path) == m.end())
+        {
+            tex_id       = load_texture(file_path);
             m[file_path] = tex_id;
         } else
             tex_id = m[file_path];
@@ -33,6 +34,43 @@ public:
         return tex_id;
     }
 };
+
+/**
+ * 指定 texture 2D 的信息，用于创建 texture 2D
+ * @field internal_format GLRGB16F, ...
+ * @field external_format GL_RGB, ...
+ * @field external_type GL_UNSIGNED_TYTE, ...
+ * @field wrap GL_REPEAT, ...
+ * @field filter GL_LINEAR
+ */
+struct Tex2DInfo {
+    GLsizei width, height;
+    GLint   internal_format;
+    GLenum  external_format;
+    GLenum  external_type;
+    GLint   wrap;
+    GLint   filter;
+};
+
+/// 新建一个空的 2d 纹理
+inline GLuint new_tex2d(const Tex2DInfo &info)
+{
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, info.internal_format, info.width, info.height, 0, info.external_format,
+                 info.external_type, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, info.wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, info.wrap);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, info.filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, info.filter);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texture_id;
+}
 
 static GLuint load_texture(const std::string &file_path)
 {
@@ -46,6 +84,7 @@ static GLuint load_texture(const std::string &file_path)
     auto data = stbi_load(file_path.c_str(), &width, &height, &channels, 0);
     if (!data)
         SPDLOG_WARN("error on load texture.");
+
 
     /// create texture and bind
     GLuint texture_id;
@@ -157,7 +196,8 @@ GLuint create_cube_map(GLsizei size = 1024)
     glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
 
     // order: +x, -x, +y, -y, +z, -z
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

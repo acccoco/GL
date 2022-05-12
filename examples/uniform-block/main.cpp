@@ -32,10 +32,10 @@ struct {
 class ShaderDiffuse : public Shader
 {
 public:
-    UniformAttributeM4fv m_model     = {"m_model", this};
-    UniformAttribute1i   has_diffuse = {"has_diffuse", this};
-    UniformAttribute1i   tex_diffuse = {"tex_diffuse", this};
-    UniformAttribute3fv  kd          = {"kd", this};
+    UniformAttribute m_model     = {"m_model", this, UniAttrType::MAT4};
+    UniformAttribute has_diffuse = {"has_diffuse", this, UniAttrType::INT};
+    UniformAttribute tex_diffuse = {"tex_diffuse", this, UniAttrType::INT};
+    UniformAttribute kd          = {"kd", this, UniAttrType::VEC3};
 
     ShaderDiffuse()
         : Shader(EXAMPLES + "uniform-block/diffuse.vert", EXAMPLES + "uniform-block/diffuse.frag")
@@ -48,15 +48,17 @@ public:
 
     void draw(const Model &m)
     {
-        this->m_model.set(m.model_matrix());
-        this->has_diffuse.set(m.tex_diffuse.has);
-        this->kd.set(m.color_diffuse);
         if (m.tex_diffuse.has)
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, m.tex_diffuse.id);
         }
-        this->tex_diffuse.set(0);
+        this->set_uniform({
+                {m_model, {._mat4 = m.model_matrix()}},
+                {has_diffuse, {._int = m.tex_diffuse.has}},
+                {kd, {._vec3 = m.color_diffuse}},
+                {tex_diffuse, {._int = 0}},
+        });
 
         m.mesh.draw();
     }

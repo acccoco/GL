@@ -10,14 +10,13 @@
 class ShaderTexVisual : public Shader
 {
 protected:
-    UniformAttribute1i tex_image{"tex_image"};
+    UniformAttribute tex_image{"tex_image", this, UniAttrType::INT};
 
 public:
     ShaderTexVisual()
         : Shader(SHADER + "tex2d-visual/tex-visual.vert", SHADER + "tex2d-visual/tex-visual.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&tex_image})
-            u_attr->init_location(program_id);
+        this->uniform_attrs_location_init();
     }
 
     void draw(const Model &model, GLuint tex_image_)
@@ -26,7 +25,9 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex_image_);
-        tex_image.set(0);
+        this->set_uniform({
+                {tex_image, {._int = 0}},
+        });
 
         model.mesh.draw();
     }

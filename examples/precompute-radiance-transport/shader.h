@@ -11,12 +11,13 @@
 class ShaderPRT : public Shader
 {
 public:
-    UniformAttributeM4fv m_model{"m_model", this};
-    UniformAttributeM4fv m_view{"m_view", this};
-    UniformAttributeM4fv m_proj{"m_proj", this};
-    UniformAttributeM3fv SH_light_R{"SH_light_R", this};
-    UniformAttributeM3fv SH_light_G{"SH_light_G", this};
-    UniformAttributeM3fv SH_light_B{"SH_light_B", this};
+    UniformAttribute m_model = {"m_model", this, UniAttrType::MAT4};
+    UniformAttribute m_view  = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj  = {"m_proj", this, UniAttrType::MAT4};
+
+    UniformAttribute SH_light_R = {"SH_light_R", this, UniAttrType::MAT3};
+    UniformAttribute SH_light_G = {"SH_light_G", this, UniAttrType::MAT3};
+    UniformAttribute SH_light_B = {"SH_light_B", this, UniAttrType::MAT3};
 
 
     ShaderPRT()

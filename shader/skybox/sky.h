@@ -10,29 +10,32 @@
 
 class ShaderSky : public Shader
 {
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttribute1i tex_cube{"tex_cube"};
+    UniformAttribute m_view{"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj{"m_proj", this, UniAttrType::MAT4};
+    UniformAttribute tex_cube{"tex_cube", this, UniAttrType::INT};
 
 public:
     ShaderSky()
         : Shader(SHADER + "skybox/sky.vert", SHADER + "skybox/sky.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &tex_cube})
-            u_attr->init_location(program_id);
+        this->uniform_attrs_location_init();
     }
 
     void init(const glm::mat4 &proj)
     {
-        m_proj.set(proj);
+        this->set_uniform({
+                {m_proj, {._mat4 = proj}},
+        });
     }
 
     void udpate_per_frame(const glm::mat4 &view, GLuint cube_map)
     {
-        m_view.set(view);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
-        tex_cube.set(0);
+        this->set_uniform({
+                {m_view, {._mat4 = view}},
+                {tex_cube, {._int = 0}},
+        });
     }
 
     void draw(const Model &model)

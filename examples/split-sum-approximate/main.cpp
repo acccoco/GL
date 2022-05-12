@@ -21,15 +21,15 @@ struct SplitSumApproximate {
     GLuint frame_buffer{};
     GLuint depth_render_buffer{};
 
-    GLuint filtered_env_map;
-    const GLsizei CUBE_SIZE = 256;
-    const GLint TOTAL_CUBE_MIP_LEVELS = 6;
+    GLuint                filtered_env_map;
+    const GLsizei         CUBE_SIZE             = 256;
+    const GLint           TOTAL_CUBE_MIP_LEVELS = 6;
     ShaderPrefilterEnvMap shader_envmap;
-    Model model_cube = Model::load_obj(MODEL_CUBE)[0];
+    Model                 model_cube = Model::load_obj(MODEL_CUBE)[0];
 
-    GLuint brdf_lut{};
-    const GLsizei LUT_SIZE = 512;
-    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
+    GLuint        brdf_lut{};
+    const GLsizei LUT_SIZE     = 512;
+    Model         model_square = Model::load_obj(MODEL_SQUARE)[0];
     ShaderIntBRDF shader_int_brdf;
 
     SplitSumApproximate()
@@ -49,7 +49,7 @@ struct SplitSumApproximate {
     {
         SPDLOG_INFO("pre filter env map...");
 
-        auto capture_proj = glm::perspective(glm::radians(90.f), 1.f, 0.1f, 10.f);
+        auto                   capture_proj  = glm::perspective(glm::radians(90.f), 1.f, 0.1f, 10.f);
         std::vector<glm::mat4> capture_views = {glm::lookAt(glm::vec3(0, 0, 0), POSITIVE_X, NEGATIVE_Y),
                                                 glm::lookAt(glm::vec3(0, 0, 0), NEGATIVE_X, NEGATIVE_Y),
                                                 glm::lookAt(glm::vec3(0, 0, 0), POSITIVE_Y, POSITIVE_Z),
@@ -60,7 +60,8 @@ struct SplitSumApproximate {
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
         GLsizei mip_size = CUBE_SIZE;
         // per level of mipmap
-        for (GLint level = 0; level < TOTAL_CUBE_MIP_LEVELS; ++level, mip_size /= 2) {
+        for (GLint level = 0; level < TOTAL_CUBE_MIP_LEVELS; ++level, mip_size /= 2)
+        {
 
             glViewport(0, 0, mip_size, mip_size);
             glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
@@ -69,7 +70,8 @@ struct SplitSumApproximate {
             float roughness = (float) level / (float) (TOTAL_CUBE_MIP_LEVELS - 1);
 
             // per face of cubemap
-            for (GLuint i = 0; i < 6; ++i) {
+            for (GLuint i = 0; i < 6; ++i)
+            {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                                        filtered_env_map, level);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -133,17 +135,17 @@ class TestEngine : public Engine
 
     SplitSumApproximate split_sum;
 
-    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
-    Model model_cube = Model::load_obj(MODEL_CUBE)[0];
-    Model model_spere = Model::load_obj(MODEL_SPHERE)[0];
+    Model              model_square        = Model::load_obj(MODEL_SQUARE)[0];
+    Model              model_cube          = Model::load_obj(MODEL_CUBE)[0];
+    Model              model_spere         = Model::load_obj(MODEL_SPHERE)[0];
     std::vector<Model> model_sphere_matrix = Model::load_obj(MODEL_SPHERE_MATRIX);
 
-    float roughness = 0.2f;
-    glm::vec3 F0 = glm::vec3(0.7, 0.7, 0.6);
+    float     roughness = 0.2f;
+    glm::vec3 F0        = glm::vec3(0.7, 0.7, 0.6);
 
-    ShaderEnvMap shader_envmap;
+    ShaderEnvMap  shader_envmap;
     ShaderLambert shader_lambert;
-    ShaderIBL shader_ibl;
+    ShaderIBL     shader_ibl;
 
     void init() override
     {
@@ -161,7 +163,7 @@ class TestEngine : public Engine
         split_sum.intgrate_brdf();
 
         model_square.tex_diffuse.has = true;
-        model_square.tex_diffuse.id = split_sum.brdf_lut;
+        model_square.tex_diffuse.id  = split_sum.brdf_lut;
 
         shader_ibl.init((float) split_sum.TOTAL_CUBE_MIP_LEVELS);
 
@@ -174,16 +176,19 @@ class TestEngine : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // draw filtered env map as skybox
-//        shader_envmap.update_per_frame(camera.view_matrix(), Camera::proj_matrix(), split_sum.TOTAL_CUBE_MIP_LEVELS);
-//        shader_envmap.draw(model_cube, split_sum.filtered_env_map, roughness);
+        shader_envmap.update_per_frame(camera.view_matrix(), Camera::proj_matrix(), split_sum.TOTAL_CUBE_MIP_LEVELS);
+        shader_envmap.draw(model_cube, split_sum.filtered_env_map, roughness);
 
-         // draw brdf lut on square
-         shader_lambert.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix());
-         shader_lambert.draw(model_square);
+        // draw brdf lut on square
+        shader_lambert.set_uniform({
+                {shader_lambert.m_view, {._mat4 = camera.view_matrix()}},
+                {shader_lambert.m_proj, {._mat4 = Camera::proj_matrix()}},
+        });
+        shader_lambert.draw(model_square);
 
         // draw obj using ibl
-//        shader_ibl.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix(), camera.get_pos());
-//        shader_ibl.draw(model_spere, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
+        //        shader_ibl.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix(), camera.get_pos());
+        //        shader_ibl.draw(model_spere, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
         //        for (auto & m : model_sphere_matrix)
         //            shader_ibl.draw(m, split_sum.filtered_env_map, split_sum.brdf_lut, roughness, F0);
     }

@@ -6,34 +6,35 @@
 class ShaderPrefilterEnvMap : public Shader
 {
 protected:
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttribute1i env_map{"env_map"};
-    UniformAttribute1f roughness{"roughness"};
+    UniformAttribute m_view    = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj    = {"m_proj", this, UniAttrType::MAT4};
+    UniformAttribute env_map   = {"env_map", this, UniAttrType::INT};
+    UniformAttribute roughness = {"roughness", this, UniAttrType::FLOAT};
 
 public:
     ShaderPrefilterEnvMap()
         : Shader(EXAMPLES + "split-sum-approximate/cube-map-common.vert",
                  EXAMPLES + "split-sum-approximate/prefilter-env-map.frag")
     {
-        for (auto u_attr: std::vector<UniformAttribute *>{&m_view, &m_proj, &env_map, &roughness})
-            u_attr->init_location(program_id);
+        this->uniform_attrs_location_init();
     }
 
     void update_per_frame(const glm::mat4 &view, const glm::mat4 &proj)
     {
-        m_view.set(view);
-        m_proj.set(proj);
+        this->set_uniform({
+                {m_view, {._mat4 = view}},
+                {m_proj, {._mat4 = proj}},
+        });
     }
 
     void draw(const Model &model, GLuint cube_map, float roughness_)
     {
-        glUseProgram(program_id);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
-        env_map.set(0);
-        roughness.set(roughness_);
-
+        this->set_uniform({
+                {env_map, {._int = 0}},
+                {roughness, {._float = roughness_}},
+        });
         model.mesh.draw();
     }
 };
@@ -41,36 +42,37 @@ public:
 class ShaderEnvMap : public Shader
 {
 protected:
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttribute1i tex_cube{"tex_cube"};
-    UniformAttribute1f roughness{"roughness"};
-    UniformAttribute1i total_mip_level{"total_mip_level"};
+    UniformAttribute m_view          = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj          = {"m_proj", this, UniAttrType::MAT4};
+    UniformAttribute tex_cube        = {"tex_cube", this, UniAttrType::INT};
+    UniformAttribute roughness       = {"roughness", this, UniAttrType::FLOAT};
+    UniformAttribute total_mip_level = {"total_mip_level", this, UniAttrType::INT};
 
 public:
     ShaderEnvMap()
         : Shader(EXAMPLES + "split-sum-approximate/cube-map-common.vert",
                  EXAMPLES + "split-sum-approximate/env-map.frag")
     {
-        std::vector<UniformAttribute *> uniforms = {&m_view, &m_proj, &tex_cube, &roughness, &total_mip_level};
-        for (auto uniform: uniforms)
-            uniform->init_location(program_id);
+        this->uniform_attrs_location_init();
     }
 
     void update_per_frame(const glm::mat4 &view, const glm::mat4 &proj, int total_levels)
     {
-        total_mip_level.set(total_levels);
-        m_view.set(view);
-        m_proj.set(proj);
+        this->set_uniform({
+                {total_mip_level, {._int = total_levels}},
+                {m_view, {._mat4 = view}},
+                {m_proj, {._mat4 = proj}},
+        });
     }
 
     void draw(const Model &model, GLuint cube_map, float roughness_)
     {
-        glUseProgram(program_id);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
-        tex_cube.set(0);
-        roughness.set(roughness_);
+        this->set_uniform({
+                {tex_cube, {._int = 0}},
+                {roughness, {._float = roughness_}},
+        });
 
         model.mesh.draw();
     }
@@ -94,53 +96,53 @@ public:
 class ShaderIBL : public Shader
 {
 public:
-    UniformAttributeM4fv m_model{"m_model"};
-    UniformAttributeM4fv m_view{"m_view"};
-    UniformAttributeM4fv m_proj{"m_proj"};
-    UniformAttribute1i filtered_env_map{"filtered_env_map"};
-    UniformAttribute1i brdf_lut{"brdf_lut"};
-    UniformAttribute3fv camera_pos{"camera_pos"};
-    UniformAttribute1f total_cube_mip_level{"total_cube_mip_level"};
-    UniformAttribute1f roughness{"roughness"};
-    UniformAttribute3fv F0{"F0"};
+    UniformAttribute m_model              = {"m_model", this, UniAttrType::MAT4};
+    UniformAttribute m_view               = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj               = {"m_proj", this, UniAttrType::MAT4};
+    UniformAttribute filtered_env_map     = {"filtered_env_map", this, UniAttrType::INT};
+    UniformAttribute brdf_lut             = {"brdf_lut", this, UniAttrType::INT};
+    UniformAttribute camera_pos           = {"camera_pos", this, UniAttrType::VEC3};
+    UniformAttribute total_cube_mip_level = {"total_cube_mip_level", this, UniAttrType::FLOAT};
+    UniformAttribute roughness            = {"roughness", this, UniAttrType::FLOAT};
+    UniformAttribute F0                   = {"F0", this, UniAttrType::VEC3};
 
     ShaderIBL()
         : Shader(EXAMPLES + "split-sum-approximate/common.vert", EXAMPLES + "split-sum-approximate/ibl.frag")
     {
-        std::vector<UniformAttribute *> uniforms = {
-                &m_model,   &m_view, &m_proj, &filtered_env_map, &brdf_lut, &camera_pos, &total_cube_mip_level,
-                &roughness, &F0};
-        for (auto uniform: uniforms)
-            uniform->init_location(program_id);
+        this->uniform_attrs_location_init();
     }
 
     void init(float total_mip_level)
     {
-        total_cube_mip_level.set(total_mip_level);
+        this->set_uniform({
+                {total_cube_mip_level, {._float = total_mip_level}},
+        });
     }
 
     void udpate_per_frame(const glm::mat4 &view, const glm::mat4 &proj, const glm::vec3 &camera_pos_)
     {
-        m_view.set(view);
-        m_proj.set(proj);
-        camera_pos.set(camera_pos_);
+        this->set_uniform({
+                {m_view, {._mat4 = view}},
+                {m_proj, {._mat4 = proj}},
+                {camera_pos, {._vec3 = camera_pos_}},
+        });
     }
 
     void draw(const Model &model, GLuint fitered_env_map_, GLuint brdf_lut_, float roughness_, const glm::vec3 &F0_)
     {
-        glUseProgram(program_id);
-        m_model.set(model.model_matrix());
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, fitered_env_map_);
-        filtered_env_map.set(0);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, brdf_lut_);
-        brdf_lut.set(1);
 
-        roughness.set(roughness_);
-        F0.set(F0_);
+        this->set_uniform({
+                {m_model, {._mat4 = model.model_matrix()}},
+                {filtered_env_map, {._int = 0}},
+                {brdf_lut, {._int = 1}},
+                {roughness, {._float = roughness_}},
+                {F0, {._vec3 = F0_}},
+        });
 
         model.mesh.draw();
     }

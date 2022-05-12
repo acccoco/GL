@@ -23,16 +23,17 @@
 class ShaderGenRSM : public Shader
 {
 public:
-    UniformAttributeM4fv m_model         = {"m_model", this};
-    UniformAttributeM4fv m_view          = {"m_view", this};
-    UniformAttributeM4fv m_proj          = {"m_proj", this};
-    UniformAttribute3fv  light_indensity = {"light_indensity", this};
-    UniformAttribute1f   fov_deg         = {"fov_deg", this};
-    UniformAttribute1f   viewport_size   = {"viewport_size", this};
-    UniformAttribute3fv  kd              = {"kd", this};
-    UniformAttribute1i   has_diffuse     = {"has_diffuse", this};
-    UniformAttribute1i   tex_diffuse     = {"tex_diffuse", this};
-    UniformAttribute1f   zoom_in         = {"zoom_in", this};
+    UniformAttribute m_model = {"m_model", this, UniAttrType::MAT4};
+    UniformAttribute m_view  = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj  = {"m_proj", this, UniAttrType::MAT4};
+
+    UniformAttribute light_indensity = {"light_indensity", this, UniAttrType::VEC3};
+    UniformAttribute fov_deg         = {"fov_deg", this, UniAttrType::FLOAT};
+    UniformAttribute viewport_size   = {"viewport_size", this, UniAttrType::FLOAT};
+    UniformAttribute kd              = {"kd", this, UniAttrType::VEC3};
+    UniformAttribute has_diffuse     = {"has_diffuse", this, UniAttrType::INT};
+    UniformAttribute tex_diffuse     = {"tex_diffuse", this, UniAttrType::INT};
+    UniformAttribute zoom_in         = {"zoom_in", this, UniAttrType::FLOAT};
 
     ShaderGenRSM()
         : Shader(EXAMPLES + "reflective-shadow-map/gen-rsm.vert", EXAMPLES + "reflective-shadow-map/gen-rsm.frag")
@@ -59,19 +60,19 @@ public:
 class ShaderGI : public Shader
 {
 public:
-    UniformAttributeM4fv m_model      = {"m_model", this};
-    UniformAttributeM4fv m_view       = {"m_view", this};
-    UniformAttributeM4fv m_proj       = {"m_proj", this};
-    UniformAttributeM4fv light_VP     = {"light_VP", this};
-    UniformAttribute1i   RSM_pos      = {"RSM_pos", this};
-    UniformAttribute1i   RSM_normal   = {"RSM_normal", this};
-    UniformAttribute1i   RSM_flux     = {"RSM_flux", this};
-    UniformAttribute1f   flux_zoom_in = {"flux_zoom_in", this};
-    UniformAttribute3fv  random_seed  = {"random_seed", this};
-    UniformAttribute3fv  light_pos    = {"light_pos", this};
-    UniformAttribute1i   has_diffuse  = {"has_diffuse", this};
-    UniformAttribute1i   tex_diffuse  = {"tex_diffuse", this};
-    UniformAttribute3fv  kd           = {"kd", this};
+    UniformAttribute m_model      = {"m_model", this, UniAttrType::MAT4};
+    UniformAttribute m_view       = {"m_view", this, UniAttrType::MAT4};
+    UniformAttribute m_proj       = {"m_proj", this, UniAttrType::MAT4};
+    UniformAttribute light_VP     = {"light_VP", this, UniAttrType::MAT4};
+    UniformAttribute RSM_pos      = {"RSM_pos", this, UniAttrType::INT};
+    UniformAttribute RSM_normal   = {"RSM_normal", this, UniAttrType::INT};
+    UniformAttribute RSM_flux     = {"RSM_flux", this, UniAttrType::INT};
+    UniformAttribute flux_zoom_in = {"flux_zoom_in", this, UniAttrType::FLOAT};
+    UniformAttribute random_seed  = {"random_seed", this, UniAttrType::VEC3};
+    UniformAttribute light_pos    = {"light_pos", this, UniAttrType::VEC3};
+    UniformAttribute has_diffuse  = {"has_diffuse", this, UniAttrType::INT};
+    UniformAttribute tex_diffuse  = {"tex_diffuse", this, UniAttrType::INT};
+    UniformAttribute kd           = {"kd", this, UniAttrType::VEC3};
 
     ShaderGI()
         : Shader(EXAMPLES + "reflective-shadow-map/gi.vert", EXAMPLES + "reflective-shadow-map/gi.frag")
@@ -145,10 +146,7 @@ class RSM : public Engine
         shader_gi.init(Camera::proj_matrix(), fbo.zoom_in);
     }
 
-    void tick_pre_render() override
-    {
-        fbo.gen_RSM(light.pos, light.indensity, models);
-    }
+    void tick_pre_render() override { fbo.gen_RSM(light.pos, light.indensity, models); }
 
     void tick_render() override
     {
@@ -261,70 +259,83 @@ void RSMFrameBuffer::gen_RSM(const glm::vec3 light_pos, const glm::vec3 indensit
 
 void ShaderGenRSM::init(float fov, float near, const glm::mat4 &proj, float zoom_in_)
 {
-    this->fov_deg.set(fov);
-    this->viewport_size.set(near);
-    this->m_proj.set(proj);
-    this->zoom_in.set(zoom_in_);
+    this->set_uniform({
+            {fov_deg, {._float = fov}},
+            {viewport_size, {._float = near}},
+            {m_proj, {._mat4 = proj}},
+            {zoom_in, {._float = zoom_in_}},
+    });
 }
 
 void ShaderGenRSM::update_per_frame(const glm::mat4 &view, const glm::vec3 &indensity)
 {
-    this->m_view.set(view);
-    this->light_indensity.set(indensity);
+    this->set_uniform({
+            {m_view, {._mat4 = view}},
+            {light_indensity, {._vec3 = indensity}},
+    });
 }
 
 void ShaderGenRSM::draw_model(const Model &m)
 {
-    this->kd.set(m.color_diffuse);
-    this->has_diffuse.set(m.tex_diffuse.has);
-    this->m_model.set(m.model_matrix());
     if (m.tex_diffuse.has)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m.tex_diffuse.id);
     }
-    this->tex_diffuse.set(0);
-    this->use();
+
+    this->set_uniform({
+            {kd, {._vec3 = m.color_diffuse}},
+            {has_diffuse, {._int = m.tex_diffuse.has}},
+            {m_model, {._mat4 = m.model_matrix()}},
+            {tex_diffuse, {._int = 0}},
+    });
+
     m.mesh.draw();
 }
 
 
 void ShaderGI::init(const glm::mat4 &proj, float zoom_in)
 {
-    m_proj.set(proj);
-    flux_zoom_in.set(zoom_in);
+    this->set_uniform({
+            {m_proj, {._mat4 = proj}},
+            {flux_zoom_in, {._float = zoom_in}},
+    });
 }
+
 void ShaderGI::update_per_frame(const glm::mat4 &view, const glm::mat4 &VP_light, const glm::vec3 &light_pos_,
                                 const glm::vec3 &seed, GLuint tex_pos, GLuint tex_normal, GLuint tex_flux)
 {
-    m_view.set(view);
-    light_VP.set(VP_light);
-    light_pos.set(light_pos_);
-    random_seed.set(seed);
-
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, tex_pos);
-    RSM_pos.set(1);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, tex_normal);
-    RSM_normal.set(2);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, tex_flux);
-    RSM_flux.set(3);
+
+    this->set_uniform({
+            {m_view, {._mat4 = view}},
+            {light_VP, {._mat4 = VP_light}},
+            {light_pos, {._vec3 = light_pos_}},
+            {random_seed, {._vec3 = seed}},
+            {RSM_pos, {._int = 1}},
+            {RSM_normal, {._int = 2}},
+            {RSM_flux, {._int = 3}},
+    });
 }
 
 
 void ShaderGI::draw(const Model &model)
 {
-    m_model.set(model.model_matrix());
-    has_diffuse.set(model.tex_diffuse.has);
-    kd.set(model.color_diffuse);
     if (model.tex_diffuse.has)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, model.tex_diffuse.id);
     }
-    tex_diffuse.set(0);
-    this->use();
+    this->set_uniform({
+            {m_model, {._mat4 = model.model_matrix()}},
+            {has_diffuse, {._int = model.tex_diffuse.has}},
+            {kd, {._vec3 = model.color_diffuse}},
+            {tex_diffuse, {._int = 0}},
+    });
     model.mesh.draw();
 }

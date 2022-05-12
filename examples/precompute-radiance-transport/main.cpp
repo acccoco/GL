@@ -23,7 +23,7 @@
 const char *DIR = "precompute-radiance-transport";
 
 /// sh 只需要前 3 阶，也就是 9 个函数
-const int SH_ORDER = 3;
+const int     SH_ORDER   = 3;
 constexpr int SH_MAX_CNT = SH_ORDER * SH_ORDER;
 
 
@@ -32,23 +32,23 @@ class EngineTest : public Engine
     /// light
     GLuint cubemap_indoor = load_cube_map(CUBE_INDOOR + "posx.jpg", CUBE_INDOOR + "negx.jpg", CUBE_INDOOR + "posy.jpg",
                                           CUBE_INDOOR + "negy.jpg", CUBE_INDOOR + "posz.jpg", CUBE_INDOOR + "negz.jpg");
-    std::string light_SH_path = EXAMPLES + "precompute-radiance-transport/light.txt";
+    std::string                                  light_SH_path = EXAMPLES + "precompute-radiance-transport/light.txt";
     std::array<std::array<float, SH_MAX_CNT>, 3> light_SH_coeff{};
 
     /// model path
-    int transport_switcher = 1;
-    std::string model_path = MODEL_BUNNY;
-    std::string transport_inter_reflect = EXAMPLES + "precompute-radiance-transport/transport_inter_reflect.txt";
-    std::string transport_unshadowed = EXAMPLES + "precompute-radiance-transport/transport_unshadowed.txt";
-    std::string transport_shadowed = EXAMPLES + "precompute-radiance-transport/transport_shadowed.txt";
+    int                transport_switcher      = 1;
+    std::string        model_path              = MODEL_BUNNY;
+    std::string        transport_inter_reflect = EXAMPLES + "precompute-radiance-transport/transport_inter_reflect.txt";
+    std::string        transport_unshadowed    = EXAMPLES + "precompute-radiance-transport/transport_unshadowed.txt";
+    std::string        transport_shadowed      = EXAMPLES + "precompute-radiance-transport/transport_shadowed.txt";
     std::vector<float> transport_SH_coeff{};
-    GLuint VAO_unshadowed{};
-    GLuint VAO_shadowed{};
-    GLuint VAO_inter_reflect{};
-    GLsizei vertex_cnt{};
+    GLuint             VAO_unshadowed{};
+    GLuint             VAO_shadowed{};
+    GLuint             VAO_inter_reflect{};
+    GLsizei            vertex_cnt{};
 
     /// shader
-    ShaderPRT shader_ptr;
+    ShaderPRT     shader_ptr;
     CubeMapVisual cube_visual;
 
     /**
@@ -86,8 +86,8 @@ class EngineTest : public Engine
 
         /// model
         VAO_inter_reflect = init_model(read_transport_sh(transport_inter_reflect), model_path);
-        VAO_unshadowed = init_model(read_transport_sh(transport_unshadowed), model_path);
-        VAO_shadowed = init_model(read_transport_sh(transport_shadowed), model_path);
+        VAO_unshadowed    = init_model(read_transport_sh(transport_unshadowed), model_path);
+        VAO_shadowed      = init_model(read_transport_sh(transport_shadowed), model_path);
     }
 
     void tick_render() override
@@ -98,10 +98,13 @@ class EngineTest : public Engine
         cube_visual.draw_as_skybox(camera.view_matrix(), Camera::proj_matrix(), cubemap_indoor);
 
         /// draw bunny
-        shader_ptr.m_proj.set(Camera::proj_matrix());
-        shader_ptr.m_view.set(camera.view_matrix());
-        shader_ptr.m_model.set(glm::one<glm::mat4>());
-        switch (transport_switcher) {
+        shader_ptr.set_uniform({
+                {shader_ptr.m_proj, {._mat4 = Camera::proj_matrix()}},
+                {shader_ptr.m_view, {._mat4 = camera.view_matrix()}},
+                {shader_ptr.m_model, {._mat4 = glm::one<glm::mat4>()}},
+        });
+        switch (transport_switcher)
+        {
             case 1: glBindVertexArray(VAO_unshadowed); break;
             case 3: glBindVertexArray(VAO_shadowed); break;
             case 2: glBindVertexArray(VAO_inter_reflect); break;
@@ -139,15 +142,15 @@ void EngineTest::set_SH_light()
 
 GLuint EngineTest::init_model(const std::vector<float> &SH, const std::string &obj_file_path)
 {
-    const int POS = 3;
-    const int NORMAL = 3;
-    const int TEX = 2;
-    constexpr int PNT = POS + NORMAL + TEX;
-    constexpr int PNTSH = PNT + SH_MAX_CNT;
+    const int     POS    = 3;
+    const int     NORMAL = 3;
+    const int     TEX    = 2;
+    constexpr int PNT    = POS + NORMAL + TEX;
+    constexpr int PNTSH  = PNT + SH_MAX_CNT;
 
     /// just need one model
     auto obj_data = read_obj(obj_file_path)[0];
-    vertex_cnt = obj_data.vertices.size() / 8;
+    vertex_cnt    = obj_data.vertices.size() / 8;
     auto face_cnt = obj_data.faces.size() / 3;
 
     GLuint VAO;
@@ -215,8 +218,10 @@ void EngineTest::read_light_sh()
     }
 
 
-    for (int i = 0; i < SH_MAX_CNT; ++i) {
-        for (int j = 0; j < 3; ++j) {/// 3 = RGB
+    for (int i = 0; i < SH_MAX_CNT; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {    /// 3 = RGB
             ss >> light_SH_coeff[j][i];
         }
     }
@@ -231,14 +236,16 @@ std::vector<float> EngineTest::read_transport_sh(const std::string &file_path)
 
     /// fs -> ss
     std::stringstream ss;
-    for (std::string str; std::getline(fs, str); ss << str << " ") {}
+    for (std::string str; std::getline(fs, str); ss << str << " ")
+    {}
     fs.close();
 
     /// lines = face cnt * 3
     int vertex_cnt_{};
     ss >> vertex_cnt_;
     auto SH = std::vector<float>(vertex_cnt_ * SH_MAX_CNT);
-    for (int i = 0; i < vertex_cnt_; ++i) {
+    for (int i = 0; i < vertex_cnt_; ++i)
+    {
         for (int j = 0; j < SH_MAX_CNT; ++j)
             ss >> SH[i * SH_MAX_CNT + j];
     }

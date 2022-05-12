@@ -57,8 +57,8 @@ public:
             tick_logic();
 
             // tick camera
-            camera.move(window.ptr);
-            camera.rotate_euler();
+            camera.update_position(window.ptr);
+            camera.update_dir_eular();
 
             // tick gui
             ImGui_ImplOpenGL3_NewFrame();
