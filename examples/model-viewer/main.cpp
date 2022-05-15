@@ -16,7 +16,7 @@
 #include "core/model.h"
 
 
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
 class TestEngine : public Engine

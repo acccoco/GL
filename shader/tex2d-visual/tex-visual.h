@@ -9,10 +9,13 @@
 
 class ShaderTexVisual : public Shader
 {
-protected:
-    UniformAttribute tex_image{"tex_image", this, UniAttrType::INT};
-
 public:
+    UniformAttribute tex_image = {"tex_image", this, UniAttrType::INT};
+
+    /// 0 表示 rgb 三种颜色，1234 分别表示某个通道
+    UniformAttribute channel = {"channel", this, UniAttrType::INT};
+
+
     ShaderTexVisual()
         : Shader(SHADER + "tex2d-visual/tex-visual.vert", SHADER + "tex2d-visual/tex-visual.frag")
     {

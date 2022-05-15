@@ -7,7 +7,7 @@
 #include "core/shader.h"
 #include "core/model.h"
 
-class ShaderLambert : public Shader
+class ShaderDiffuse : public Shader
 {
 public:
     UniformAttribute m_view{"m_view", this, UniAttrType::MAT4};
@@ -18,8 +18,8 @@ public:
     UniformAttribute kd{"kd", this, UniAttrType::VEC3};
 
 
-    ShaderLambert()
-        : Shader(SHADER + "lambert/lambert.vert", SHADER + "lambert/lambert.frag")
+    ShaderDiffuse()
+        : Shader(SHADER + "diffuse/diffuse.vert", SHADER + "diffuse/diffuse.frag")
     {
         uniform_attrs_location_init();
     }

@@ -60,7 +60,7 @@ set(LIB_LINKS
 # all targes
 file(GLOB ALL_EXAMPLES RELATIVE ${CMAKE_SOURCE_DIR}/examples ${CMAKE_SOURCE_DIR}/examples/*)
 foreach (EXAMPLE ${ALL_EXAMPLES})
-    if (NOT ${EXAMPLE} STREQUAL ".DS_Store")    # osx hidden file
+    if (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/${EXAMPLE})
         add_executable(${EXAMPLE} ${CMAKE_SOURCE_DIR}/examples/${EXAMPLE}/main.cpp)
         target_link_libraries(${EXAMPLE} ${LIB_LINKS})
     endif()

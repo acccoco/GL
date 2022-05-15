@@ -14,7 +14,7 @@
 #include "core/misc.h"
 
 #include "shader/skybox/skybox.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 #include "./shader.h"
 
 struct SplitSumApproximate {
@@ -144,7 +144,7 @@ class TestEngine : public Engine
     glm::vec3 F0        = glm::vec3(0.7, 0.7, 0.6);
 
     ShaderEnvMap  shader_envmap;
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
     ShaderIBL     shader_ibl;
 
     void init() override

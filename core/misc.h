@@ -46,3 +46,16 @@ inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, G
     glViewport(xidx * x_delta, yidx * y_delta, x_width, y_height);
 #endif
 }
+
+
+/**
+ * 纹理绑定的简化写法
+ * @param target GL_TEXTURE_2D, ...
+ * @param texture_loc 0, 1, 2, ...
+ * @param texture texture id
+ */
+inline void glBindTexture_(GLenum target, int texture_loc, GLuint texture)
+{
+    glActiveTexture(GL_TEXTURE0 + texture_loc);
+    glBindTexture(target, texture);
+}

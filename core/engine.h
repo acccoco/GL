@@ -41,6 +41,8 @@ public:
         glfwSetMouseButtonCallback(window.ptr, mouse_button_callback);
 
         imgui_init(window.ptr);
+
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     }
 
     // tick order

@@ -12,12 +12,12 @@
 #include "core/model.h"
 
 #include "shader/skybox/skybox.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 
 
 class EngineTest : public Engine
 {
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
 
     std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
 

@@ -19,7 +19,7 @@
 
 #include "shader/skybox/skybox.h"
 #include "shader/tex2d-visual/tex-visual.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 
 
 struct ThisFrameBuffer {
@@ -49,7 +49,7 @@ class EngineTest : public Engine
 {
     ThisFrameBuffer framebuffer;
 
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
     ShaderTexVisual shader_texvisual;
 
     std::vector<Model> three_objs = Model::load_obj(MODEL_THREE_OBJS);

@@ -15,7 +15,7 @@
 #include "core/texture.h"
 
 #include "shader/tex2d-visual/tex-visual.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
 #include "./shader.h"
@@ -60,7 +60,7 @@ class TestEngine : public Engine
 
     ShaderDepth shader_depth;
     ShaderPcss shader_pcss;
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
     ShaderBlinnPhong shader_phong;
     ShaderTexVisual shader_texvisual;
 

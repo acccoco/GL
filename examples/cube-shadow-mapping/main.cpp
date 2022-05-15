@@ -13,7 +13,7 @@
 #include "core/texture.h"
 
 #include "shader/skybox/skybox.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 
 #include "./shader.h"
 
@@ -52,7 +52,7 @@ private:
 
     ShaderDepth shader_depth;
     ShaderShadowMapping shader_shadow;
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
 
     SkyBox sky_box;
 

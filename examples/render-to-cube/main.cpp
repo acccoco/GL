@@ -15,7 +15,7 @@
 
 #include "shader/skybox/skybox.h"
 #include "shader/tex2d-visual/tex-visual.h"
-#include "shader/lambert/lambert.h"
+#include "shader/diffuse/diffuse.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
 
@@ -43,7 +43,7 @@ class EngineTest : public Engine
     std::vector<Model> model_three = Model::load_obj(MODEL_THREE_OBJS);
     std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
 
-    ShaderLambert shader_lambert;
+    ShaderDiffuse shader_lambert;
     ShaderBlinnPhong shader_phong;
     ShaderTexVisual shader_texvisual;
 

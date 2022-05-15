@@ -17,9 +17,6 @@
 #include <glad/glad.h>
 
 
-class Shader;
-
-
 /// uniform attribute 的类型
 enum class UniAttrType {
     INT = 0,
@@ -67,26 +64,8 @@ private:
     static void init_uni_attr_func_list();
 };
 
-inline void UniAttrFuncList::init_uni_attr_func_list()
-{
-    uni_attr_func_list[static_cast<int>(UniAttrType::INT)] = [](GLint location, UniAttrValue value_ptr) {
-        glUniform1i(location, value_ptr._int);
-    };
-    uni_attr_func_list[static_cast<int>(UniAttrType::FLOAT)] = [](GLint location, UniAttrValue value_ptr) {
-        glUniform1f(location, value_ptr._float);
-    };
-    uni_attr_func_list[static_cast<int>(UniAttrType::MAT3)] = [](GLint location, UniAttrValue value) {
-        glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value._mat3));
-    };
-    uni_attr_func_list[static_cast<int>(UniAttrType::MAT4)] = [](GLint location, UniAttrValue value) {
-        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value._mat4));
-    };
-    uni_attr_func_list[static_cast<int>(UniAttrType::VEC3)] = [](GLint location, UniAttrValue value) {
-        glUniform3fv(location, 1, glm::value_ptr(value._vec3));
-    };
-}
 
-
+class Shader;
 struct UniformAttribute {
 public:
     /// 当前 uniform attribute 在 shader 中的变量名称
@@ -226,4 +205,23 @@ inline GLuint shader_link(GLuint vertex, GLuint fragment, GLuint geometry)
         std::cout << info << std::endl;
     }
     return program_id;
+}
+
+inline void UniAttrFuncList::init_uni_attr_func_list()
+{
+    uni_attr_func_list[static_cast<int>(UniAttrType::INT)] = [](GLint location, UniAttrValue value_ptr) {
+        glUniform1i(location, value_ptr._int);
+    };
+    uni_attr_func_list[static_cast<int>(UniAttrType::FLOAT)] = [](GLint location, UniAttrValue value_ptr) {
+        glUniform1f(location, value_ptr._float);
+    };
+    uni_attr_func_list[static_cast<int>(UniAttrType::MAT3)] = [](GLint location, UniAttrValue value) {
+        glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value._mat3));
+    };
+    uni_attr_func_list[static_cast<int>(UniAttrType::MAT4)] = [](GLint location, UniAttrValue value) {
+        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value._mat4));
+    };
+    uni_attr_func_list[static_cast<int>(UniAttrType::VEC3)] = [](GLint location, UniAttrValue value) {
+        glUniform3fv(location, 1, glm::value_ptr(value._vec3));
+    };
 }
