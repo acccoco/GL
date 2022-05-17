@@ -3,3 +3,4 @@ cmake-build-debug
 *.blend1
 .idea
 build
+examples/*/shader

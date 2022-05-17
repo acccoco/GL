@@ -30,7 +30,7 @@ public:
     UniformAttribute tex_albedo    = {"tex_albedo", this, UniAttrType::INT};
 
     ShaderBRDF()
-        : Shader(CUR + "brdf.vert", CUR + "brdf.frag")
+        : Shader(CUR + "shader/brdf.vert", CUR + "shader/brdf.frag")
     {
         this->uniform_attrs_location_init();
     }
