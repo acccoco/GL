@@ -9,12 +9,12 @@ class Engine
 {
 protected:
     struct {
-        GLFWwindow *ptr = nullptr;
-        int width = 800;
-        int height = 800;
+        GLFWwindow *ptr    = nullptr;
+        int         width  = 800;
+        int         height = 800;
     } window;
 
-    Camera camera;
+    Camera       camera;
     virtual void init() {}
     virtual void tick_logic() {}
     virtual void tick_gui() {}
@@ -52,7 +52,8 @@ public:
         init();
 
         glEnable(GL_DEPTH_TEST);
-        while (!glfwWindowShouldClose(window.ptr)) {
+        while (!glfwWindowShouldClose(window.ptr))
+        {
             // tick logic
             glfwPollEvents();
             check_close_window(window.ptr);

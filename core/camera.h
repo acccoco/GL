@@ -30,15 +30,9 @@ public:
         : position(pos)
     {}
 
-    [[nodiscard]] glm::vec3 get_pos() const
-    {
-        return position;
-    }
+    [[nodiscard]] glm::vec3 get_pos() const { return position; }
 
-    [[nodiscard]] auto get_euler() const
-    {
-        return euler;
-    }
+    [[nodiscard]] auto get_euler() const { return euler; }
 
     /// 基于欧拉角的旋转方式\n
     /// 更新欧拉角，用欧拉角更新 front 和 right 方向
@@ -46,22 +40,16 @@ public:
 
     /// 基于四元数的旋转\n
     /// 更新四元数，用四元数更新 front 和 right 方向
-    void update_dir_quaternion();
+    [[maybe_unused]] [[maybe_unused]] void update_dir_quaternion();
 
     /// 通过 glfw 检测按键按下情况，用按键控制摄像机移动
     void update_position(GLFWwindow *window);
 
     /// view 矩阵
-    [[nodiscard]] glm::mat4 view_matrix() const
-    {
-        return glm::lookAt(position, position + glm::normalize(front), UP);
-    }
+    [[nodiscard]] glm::mat4 view_matrix() const { return glm::lookAt(position, position + glm::normalize(front), UP); }
 
     /// 透视投影矩阵
-    static glm::mat4 proj_matrix()
-    {
-        return glm::perspective(glm::radians(60.f), 1.f, 0.1f, 100.f);
-    }
+    static glm::mat4 proj_matrix() { return glm::perspective(glm::radians(60.f), 1.f, 0.1f, 100.f); }
 
 private:
     const glm::vec3 UP = {0.f, 1.f, 0.f};
@@ -105,7 +93,7 @@ inline void Camera::update_dir_eular()
     g_mouse_dx = 0, g_mouse_dy = 0;
 }
 
-inline void Camera::update_dir_quaternion()
+[[maybe_unused]] inline void Camera::update_dir_quaternion()
 {
     if (g_mouse_dx != 0)
     {

@@ -42,8 +42,11 @@ public:
     UniformAttribute tex_diffuse = {"tex_diffuse", this, UniAttrType::INT};
     UniformAttribute kd          = {"kd", this, UniAttrType::VEC3};
 
-    UniformAttribute light_pos  = {"light_pos", this, UniAttrType::VEC3};
-    UniformAttribute rand_seed3 = {"rand_seed3", this, UniAttrType::VEC3};
+    UniformAttribute light_pos   = {"light_pos", this, UniAttrType::VEC3};
+    UniformAttribute rand_seed3  = {"rand_seed3", this, UniAttrType::VEC3};
+    UniformAttribute ssao_on     = {"ssao_on", this, UniAttrType::INT};
+    UniformAttribute ssao_radius = {"ssao_radius", this, UniAttrType::FLOAT};
+    UniformAttribute ssao_only   = {"ssao_only", this, UniAttrType::INT};
 
     ShaderSSAO()
         : Shader(EXAMPLES + "ssao/ssao.vert", EXAMPLES + "ssao/ssao.frag")
@@ -60,6 +63,9 @@ class SSAO : public Engine
     GLuint        frame_buffer{};
     GLuint        depth_buffer{};
     const GLsizei framebuffer_size = 512;
+    bool          ssao_on          = true;
+    float         ssao_radius      = 0.2f;
+    bool          ssao_only        = false;
 
     ShaderGeometry  shader_geometry;
     ShaderSSAO      shader_ssao;
@@ -67,6 +73,7 @@ class SSAO : public Engine
 
     std::vector<Model> model_three  = Model::load_obj(MODEL_THREE_OBJS);
     Model              model_square = Model::load_obj(MODEL_SQUARE)[0];
+    std::vector<Model> model_lucy   = Model::load_obj(MODEL_LUCY);
 
 
     void init() override
@@ -103,7 +110,7 @@ class SSAO : public Engine
         });
 
         /// draw meshes
-        for (auto &m: model_three)
+        for (auto &m: model_lucy)
         {
             shader_geometry.set_uniform({
                     {shader_geometry.m_model, {._mat4 = m.model_matrix()}},
@@ -141,9 +148,12 @@ class SSAO : public Engine
                 {shader_ssao.camera_vp, {._mat4 = Camera::proj_matrix() * camera.view_matrix()}},
                 {shader_ssao.light_pos, {._vec3 = glm::vec3(-1.f, 2.f, 3.f)}},
                 {shader_ssao.rand_seed3, {._vec3 = glm::vec3(ur(gen), ur(gen), 0.f)}},
+                {shader_ssao.ssao_on, {._int = ssao_on}},
+                {shader_ssao.ssao_radius, {._float = ssao_radius}},
+                {shader_ssao.ssao_only, {._int = ssao_only}},
         });
 
-        for (auto &m: model_three)
+        for (auto &m: model_lucy)
         {
             if (m.tex_diffuse.has)
                 glBindTexture_(GL_TEXTURE_2D, 1, m.tex_diffuse.id);
@@ -155,6 +165,17 @@ class SSAO : public Engine
             });
             m.mesh.draw();
         }
+    }
+
+    void tick_gui() override
+    {
+        ImGui::Begin("setting");
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::SliderFloat("ssao radius", &ssao_radius, 0.f, 2.f);
+        ImGui::Checkbox("ssao on", &ssao_on);
+        ImGui::Checkbox("ssao only", &ssao_only);
+        ImGui::End();
     }
 };
 

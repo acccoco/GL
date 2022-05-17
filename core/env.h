@@ -10,7 +10,8 @@
 #include <imgui_impl_opengl3.h>
 
 
-static void glfw_init() {
+inline void glfw_init()
+{
     // init glfw
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -21,7 +22,8 @@ static void glfw_init() {
 #endif
 }
 
-static void spdlog_init() {
+inline void spdlog_init()
+{
     spdlog::set_level(spdlog::level::debug);
 
     /**
@@ -39,12 +41,14 @@ static void spdlog_init() {
     spdlog::set_pattern("[%H:%M:%S][%^%L%$][%10!s:%-3!#] %v");
 }
 
-static void glad_init() {
+inline void glad_init()
+{
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
         std::cout << "fail to environment_init glad." << std::endl;
 }
 
-static void imgui_init(GLFWwindow *window) {
+inline void imgui_init(GLFWwindow *window)
+{
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
@@ -53,7 +57,8 @@ static void imgui_init(GLFWwindow *window) {
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-static inline void check_close_window(GLFWwindow *window) {
+inline void check_close_window(GLFWwindow *window)
+{
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }

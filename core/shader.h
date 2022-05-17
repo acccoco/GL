@@ -18,7 +18,7 @@
 
 
 /// uniform attribute 的类型
-enum class UniAttrType {
+enum UniAttrType {
     INT = 0,
     FLOAT,
     MAT4,
@@ -55,7 +55,7 @@ public:
 
 private:
     /// 为 uniform attribute 设置值的函数列表
-    inline static func_type uni_attr_func_list[static_cast<int>(UniAttrType::_total_)] = {};
+    inline static func_type uni_attr_func_list[UniAttrType::_total_] = {};
 
     /// 函数查找表 uni_attr_func_list 是否初始化
     inline static bool has_init = false;
@@ -209,19 +209,19 @@ inline GLuint shader_link(GLuint vertex, GLuint fragment, GLuint geometry)
 
 inline void UniAttrFuncList::init_uni_attr_func_list()
 {
-    uni_attr_func_list[static_cast<int>(UniAttrType::INT)] = [](GLint location, UniAttrValue value_ptr) {
+    uni_attr_func_list[UniAttrType::INT] = [](GLint location, UniAttrValue value_ptr) {
         glUniform1i(location, value_ptr._int);
     };
-    uni_attr_func_list[static_cast<int>(UniAttrType::FLOAT)] = [](GLint location, UniAttrValue value_ptr) {
+    uni_attr_func_list[UniAttrType::FLOAT] = [](GLint location, UniAttrValue value_ptr) {
         glUniform1f(location, value_ptr._float);
     };
-    uni_attr_func_list[static_cast<int>(UniAttrType::MAT3)] = [](GLint location, UniAttrValue value) {
+    uni_attr_func_list[UniAttrType::MAT3] = [](GLint location, UniAttrValue value) {
         glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value._mat3));
     };
-    uni_attr_func_list[static_cast<int>(UniAttrType::MAT4)] = [](GLint location, UniAttrValue value) {
+    uni_attr_func_list[UniAttrType::MAT4] = [](GLint location, UniAttrValue value) {
         glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value._mat4));
     };
-    uni_attr_func_list[static_cast<int>(UniAttrType::VEC3)] = [](GLint location, UniAttrValue value) {
+    uni_attr_func_list[UniAttrType::VEC3] = [](GLint location, UniAttrValue value) {
         glUniform3fv(location, 1, glm::value_ptr(value._vec3));
     };
 }

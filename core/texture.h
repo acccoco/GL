@@ -2,12 +2,11 @@
 
 #include <map>
 #include <string>
-#include <iostream>
-
 
 #include <stb_image.h>
 
-static GLuint load_texture(const std::string &file_path);
+
+GLuint load_texture(const std::string &file_path);
 
 /**
  * @brief 纹理资源管理
@@ -23,15 +22,9 @@ class TextureManager
 public:
     static GLuint load_texture_(const std::string &file_path)
     {
-        GLuint tex_id;
         if (m.find(file_path) == m.end())
-        {
-            tex_id       = load_texture(file_path);
-            m[file_path] = tex_id;
-        } else
-            tex_id = m[file_path];
-
-        return tex_id;
+            m[file_path] = load_texture(file_path);
+        return m[file_path];
     }
 };
 
@@ -52,7 +45,27 @@ struct Tex2DInfo {
     GLint   filter;
 };
 
+
 /// 新建一个空的 2d 纹理
+GLuint new_tex2d(const Tex2DInfo &info);
+
+/// 从文件中读取 cubemap
+GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x, const std::string &positive_y,
+                     const std::string &negative_y, const std::string &positive_z, const std::string &negative_z);
+
+/// 创建 depth render buffer
+GLuint create_depth_buffer(GLsizei width = 1024, GLsizei height = 1024);
+
+/// 创建 2D 的纹理
+// @fixme：删除掉这个
+GLuint create_tex(GLsizei width = 1024, GLsizei height = 1024);
+
+/// 创建一个空的 cubemap
+GLuint create_cube_map(GLsizei size = 1024);
+
+/// =================================================================
+
+
 inline GLuint new_tex2d(const Tex2DInfo &info)
 {
     GLuint texture_id;
@@ -72,7 +85,7 @@ inline GLuint new_tex2d(const Tex2DInfo &info)
     return texture_id;
 }
 
-static GLuint load_texture(const std::string &file_path)
+inline GLuint load_texture(const std::string &file_path)
 {
     /// read file
     int width, height, channels;
@@ -91,12 +104,13 @@ static GLuint load_texture(const std::string &file_path)
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    if (channels == 3)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    else if (channels == 4)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    else
-        std::cout << "channels error" << std::endl;
+    switch (channels)
+    {
+        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data); break;
+        case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data); break;
+        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data); break;
+        default: SPDLOG_ERROR("bad texture channes: {}", channels);
+    }
 
     /// repeat sample
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -116,9 +130,8 @@ static GLuint load_texture(const std::string &file_path)
     return texture_id;
 }
 
-[[maybe_unused]] static GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x,
-                                             const std::string &positive_y, const std::string &negative_y,
-                                             const std::string &positive_z, const std::string &negative_z)
+inline GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x, const std::string &positive_y,
+                            const std::string &negative_y, const std::string &positive_z, const std::string &negative_z)
 {
     GLuint cube_map;
     glGenTextures(1, &cube_map);
@@ -130,9 +143,9 @@ static GLuint load_texture(const std::string &file_path)
         stbi_set_flip_vertically_on_load(false);
         auto data = stbi_load(path.c_str(), &width, &height, &channels, 0);
         if (!data)
-            std::cout << "error on load texture, path: " << path << std::endl;
+            SPDLOG_ERROR("error on load texture, path: {}", path);
         if (channels != 3 && channels != 4)
-            std::cout << "tex channels error, path: " << path << std::endl;
+            SPDLOG_ERROR("tex channels error, path: {}", path);
         GLint internal_format = channels == 3 ? GL_RGB : GL_RGBA;
         glTexImage2D(tex_target, 0, internal_format, width, height, 0, internal_format, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
@@ -158,7 +171,7 @@ static GLuint load_texture(const std::string &file_path)
     return cube_map;
 }
 
-[[maybe_unused]] static GLuint create_depth_buffer(GLsizei width = 1024, GLsizei height = 1024)
+inline GLuint create_depth_buffer(GLsizei width, GLsizei height)
 {
     GLuint render_buffer;
     glGenRenderbuffers(1, &render_buffer);
@@ -170,7 +183,7 @@ static GLuint load_texture(const std::string &file_path)
     return render_buffer;
 }
 
-GLuint create_tex(GLsizei width = 1024, GLsizei height = 1024)
+inline GLuint create_tex(GLsizei width, GLsizei height)
 {
     GLuint tex_id;
     glGenTextures(1, &tex_id);
@@ -188,7 +201,7 @@ GLuint create_tex(GLsizei width = 1024, GLsizei height = 1024)
 }
 
 
-GLuint create_cube_map(GLsizei size = 1024)
+inline GLuint create_cube_map(GLsizei size)
 {
     GLuint cube_map;
 

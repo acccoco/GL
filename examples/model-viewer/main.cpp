@@ -33,7 +33,8 @@ class TestEngine : public Engine
     void init() override
     {
         // load model
-        for (auto &path: model_path_list) {
+        for (auto &path: model_path_list)
+        {
             auto model = Model::load_obj(path);
             models.insert(models.end(), model.begin(), model.end());
         }
@@ -49,9 +50,21 @@ class TestEngine : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader_phong.update_per_frame(camera.view_matrix(), camera.get_pos(), light_pos, 2.0);
-        for (auto &m: models) {
+        for (auto &m: models)
+        {
             shader_phong.draw(m);
         }
+    }
+
+    void tick_gui() override
+    {
+        ImGui::Begin("setting");
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::SliderFloat("light pos x", &light_pos.x, -10.f, 10.f);
+        ImGui::SliderFloat("light pos y", &light_pos.y, -10.f, 10.f);
+        ImGui::SliderFloat("light pos z", &light_pos.z, -10.f, 10.f);
+        ImGui::End();
     }
 
 public:
@@ -61,13 +74,15 @@ public:
 
 int main(int args, char **argv)
 {
-    if (args == 1) {
+    if (args == 1)
+    {
         std::cout << "cmd [model1.obj] [model2.obj]" << std::endl;
         return 0;
     }
 
     auto engine = TestEngine();
-    for (int i = 1; i < args; ++i) {
+    for (int i = 1; i < args; ++i)
+    {
         engine.model_path_list.emplace_back(argv[i]);
     }
 

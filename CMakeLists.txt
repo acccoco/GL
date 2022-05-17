@@ -1,11 +1,17 @@
 cmake_minimum_required(VERSION 3.19)
 project(GL)
 
+
+# compile setting
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-# config
+
+# dir config
+set(GL_MODEL_DIR "${CMAKE_SOURCE_DIR}/model")
+set(GL_TEXTURE_DIR "${CMAKE_SOURCE_DIR}/texture")
 configure_file(${CMAKE_SOURCE_DIR}/config.hpp ${CMAKE_BINARY_DIR}/config.hpp)
+
 
 # system header and lib
 if (APPLE)
@@ -13,8 +19,6 @@ if (APPLE)
     link_directories(/opt/homebrew/lib)
 endif ()
 
-# project include
-include_directories(core ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
 # lib: glad
 add_library(GLAD STATIC ext/glad/src/glad.c)
@@ -56,6 +60,11 @@ set(LIB_LINKS
         glm::glm
         ${ASSIMP_LIBRARIES}
         ${OPENGL_LIBRARIES})
+
+
+# project include
+include_directories(core ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+
 
 # all targes
 file(GLOB ALL_EXAMPLES RELATIVE ${CMAKE_SOURCE_DIR}/examples ${CMAKE_SOURCE_DIR}/examples/*)

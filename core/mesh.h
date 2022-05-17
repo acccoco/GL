@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+/// 创建一个 VAO 对象
 static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int> &indices = {});
 
 
@@ -17,29 +18,36 @@ private:
     bool has_ebo = true;
 
 public:
+    /// 创建没有 EBO 的模型，顶点属性包括 pos normal texcoord
     explicit Mesh(const std::vector<float> &vertices)
         : vao_id(vao(vertices)),
           vertex_cnt(static_cast<GLsizei>(vertices.size() / 8)),
           has_ebo(false)
     {}
+
+    /// 创建有 EBO 的模型，顶点属性包括 pos normal texcoord
     Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &faces)
         : vao_id(vao(vertices, faces)),
           vertex_cnt(static_cast<GLsizei>(vertices.size()) / 8),
           has_ebo(true)
     {}
 
-    [[nodiscard]] GLsizei vertex_cnt_get() const { return vertex_cnt; }
-    [[nodiscard]] GLuint vao_get() const { return vao_id; }
+    /// 绑定 VAO，绘制模型
+    void draw() const;
 
-    void draw() const
-    {
-        glBindVertexArray(vao_id);
-        if (has_ebo)
-            glDrawElements(GL_TRIANGLES, vertex_cnt, GL_UNSIGNED_INT, nullptr);
-        else
-            glDrawArrays(GL_TRIANGLES, 0, vertex_cnt);
-    }
 };
+
+
+/// =================================================================
+
+void Mesh::draw() const {
+    glBindVertexArray(vao_id);
+    if (has_ebo)
+        glDrawElements(GL_TRIANGLES, vertex_cnt, GL_UNSIGNED_INT, nullptr);
+    else
+        glDrawArrays(GL_TRIANGLES, 0, vertex_cnt);
+}
+
 
 static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int> &indices)
 {

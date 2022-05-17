@@ -3,8 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class PointLight
+struct PointLight
 {
     glm::vec3 pos;
-    float     indensity;
+    glm::vec3 color;
 };

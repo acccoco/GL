@@ -10,21 +10,18 @@
 
 
 struct Model {
-    Mesh mesh;
+    Mesh      mesh;
     glm::vec3 pos{0, 0, 0};
     struct {
-        GLuint id = 0;
-        bool has = false;
+        GLuint id  = 0;
+        bool   has = false;
     } tex_diffuse;
 
     glm::vec3 color_diffuse{};
     glm::vec3 color_ambient{};
     glm::vec3 color_specular{};
 
-    [[nodiscard]] glm::mat4 model_matrix() const
-    {
-        return glm::translate(glm::one<glm::mat4>(), pos);
-    }
+    [[nodiscard]] glm::mat4 model_matrix() const { return glm::translate(glm::one<glm::mat4>(), pos); }
 
     Model(const Mesh &mesh_, const glm::vec3 &pos_, GLuint diffuse_id)
         : mesh(mesh_),
@@ -44,22 +41,26 @@ struct Model {
           color_ambient(data.color_ambient),
           color_specular(data.color_specular)
     {
-        if (data.tex_diffuse_path.empty()) {
+        if (data.tex_diffuse_path.empty())
+        {
             tex_diffuse.has = false;
-        } else {
+        } else
+        {
             tex_diffuse.has = true;
-            tex_diffuse.id = TextureManager::load_texture_(data.tex_diffuse_path);
+            tex_diffuse.id  = TextureManager::load_texture_(data.tex_diffuse_path);
         }
     }
 
 
+    /// 从 .obj 文件中读取 mesh 和 material
     static std::vector<Model> load_obj(const std::string &file_path)
     {
         auto data_list = read_obj(file_path);
 
         std::vector<Model> models;
         models.reserve(data_list.size());
-        for (auto &data: data_list) {
+        for (auto &data: data_list)
+        {
             models.emplace_back(data);
         }
         return models;

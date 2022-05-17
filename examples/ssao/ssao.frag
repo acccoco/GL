@@ -15,13 +15,15 @@ uniform vec3      kd;
 uniform mat4      camera_vp;
 uniform vec3      light_pos;
 uniform vec3      rand_seed3;
+uniform bool      ssao_on;
+uniform float     ssao_radius;
+uniform bool      ssao_only;
 
 const float PI   = 3.141592653589793;
 const float _2PI = 6.283185307179586;
 
 /// 默认的环境光照
 const vec3  ambient_Li  = vec3(0.3);
-const float ssao_radius = 0.3;
 const int   NUM_RINGS   = 5;
 const int   NUM_SAMPLES = 17;
 
@@ -35,7 +37,7 @@ vec3 rand_to_hemisphere(vec2 rand2);
 vec3 direct_shading(vec3 albedo);
 
 /// 进行 SSAO 的间接光照着色
-vec3 ssao(mat3 TBN, vec3 albedo);
+float ssao(mat3 TBN);
 
 vec2 poisson_disk[NUM_SAMPLES];
 void gen_poisson_disk(vec2 rand_seed2);
@@ -46,16 +48,21 @@ void main() {
     gen_poisson_disk(rand_seed3.xy + gl_FragCoord.xy);
 
     vec3 direct_color = direct_shading(albedo);
-    vec3 ambient_color = ssao(TBN, albedo);
+    float kA = ssao(TBN);
 
-    FragColor = vec4(ambient_color + direct_color, 1.0);
+    if (ssao_only)
+        FragColor = vec4(vec3(kA), 1.0);
+    else if (ssao_on)
+        FragColor = vec4(kA * albedo * 0.2 + direct_color, 1.0);
+    else
+        FragColor = vec4(direct_color, 1.0);
 }
 
 vec3 direct_shading(vec3 albedo)
 {
     vec3 dir_L = normalize(light_pos - vs_fs.FragPos);
     float cos_theta = max(0.0, dot(dir_L, normalize(vs_fs.Normal)));
-    return albedo / 2.0 * cos_theta;
+    return albedo / 1.3 * cos_theta;
 }
 
 /// 根据二维向量生成随机数
@@ -81,7 +88,7 @@ void gen_poisson_disk(vec2 rand_seed2)
     }
 }
 
-vec3 ssao(mat3 TBN, vec3 albedo)
+float ssao(mat3 TBN)
 {
     float sum = 0.0;/// 分子
     float base = 0.0;/// 加权平均的分母
@@ -108,7 +115,7 @@ vec3 ssao(mat3 TBN, vec3 albedo)
     }
 
     float kA = sum / base;
-    return kA * ambient_Li * albedo;
+    return kA;
 }
 
 

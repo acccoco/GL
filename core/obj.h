@@ -19,37 +19,44 @@
  * 从 .obj 中读取出来的数据格式
  */
 struct ObjData {
-    std::vector<float> vertices;
+    std::vector<float>        vertices;
     std::vector<unsigned int> faces;
-    std::string tex_diffuse_path;
-    glm::vec3 color_diffuse{};
-    glm::vec3 color_ambient{};
-    glm::vec3 color_specular{};
+    std::string               tex_diffuse_path;
+    glm::vec3                 color_diffuse{};
+    glm::vec3                 color_ambient{};
+    glm::vec3                 color_specular{};
 };
 
+/// 从指定 .obj 文件读取模型数据
+std::vector<ObjData> read_obj(const std::string &file_path);
 
+/// 从 assimp 的 mesh 中读取模型信息
 static ObjData process_mesh(const aiMesh &ai_mesh, const aiScene &scene, const std::string &dir_path);
 
+
+/// =================================================================
 std::vector<ObjData> read_obj(const std::string &file_path)
 {
     SPDLOG_INFO("load obj: {}...", file_path);
 
     /// load file
     Assimp::Importer importer;
-    const auto scene = importer.ReadFile(file_path, aiProcess_Triangulate | aiProcess_GenNormals);
+    const auto       scene = importer.ReadFile(file_path, aiProcess_Triangulate | aiProcess_GenNormals);
     if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
         SPDLOG_WARN("fail to load model: {}", file_path);
 
     /// process model, 层序遍历
-    auto dir_path = file_path.substr(0, file_path.find_last_of('/')) + '/';
+    auto                 dir_path = file_path.substr(0, file_path.find_last_of('/')) + '/';
     std::queue<aiNode *> nodes;
     nodes.push(scene->mRootNode);
     std::vector<ObjData> data_list;
-    while (!nodes.empty()) {
+    while (!nodes.empty())
+    {
         auto node = nodes.front();
         nodes.pop();
 
-        for (int i = 0; i < node->mNumMeshes; ++i) {
+        for (int i = 0; i < node->mNumMeshes; ++i)
+        {
             data_list.push_back(process_mesh(*scene->mMeshes[node->mMeshes[i]], *scene, dir_path));
         }
 
@@ -70,10 +77,11 @@ static ObjData process_mesh(const aiMesh &ai_mesh, const aiScene &scene, const s
     {
         std::vector<float> vertices;
         vertices.reserve(ai_mesh.mNumVertices * 8);
-        for (int j = 0; j < ai_mesh.mNumVertices; ++j) {
-            auto pos = ai_mesh.mVertices[j];
-            auto normal = ai_mesh.mNormals[j];// if (mesh->mNormals)
-            auto uv = ai_mesh.mTextureCoords[0] ? ai_mesh.mTextureCoords[0][j] : aiVector3t<ai_real>(0, 0, 0);
+        for (int j = 0; j < ai_mesh.mNumVertices; ++j)
+        {
+            auto pos    = ai_mesh.mVertices[j];
+            auto normal = ai_mesh.mNormals[j];    // if (mesh->mNormals)
+            auto uv     = ai_mesh.mTextureCoords[0] ? ai_mesh.mTextureCoords[0][j] : aiVector3t<ai_real>(0, 0, 0);
             vertices.insert(vertices.end(), {pos.x, pos.y, pos.z});
             vertices.insert(vertices.end(), {normal.x, normal.y, normal.z});
             vertices.insert(vertices.end(), {uv.x, uv.y});
@@ -84,7 +92,8 @@ static ObjData process_mesh(const aiMesh &ai_mesh, const aiScene &scene, const s
     // faces
     {
         std::vector<unsigned int> faces;
-        for (int j = 0; j < ai_mesh.mNumFaces; ++j) {
+        for (int j = 0; j < ai_mesh.mNumFaces; ++j)
+        {
             auto indices = ai_mesh.mFaces[j].mIndices;
             faces.insert(faces.end(), {indices[0], indices[1], indices[2]});
         }
