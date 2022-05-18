@@ -167,5 +167,5 @@ void main()
     phong_shading();
 
     // three implement: visibility_pcss, visibility_shadow_mapping, visibility_pcf
-    FragColor = vec4(pow((g_diffuse + g_specular) * visibility_pcss(frag_depth, frag_uv, bias) + g_ambient, vec3(1.0/2.2)), 1.0);
+    FragColor = vec4(pow((g_diffuse + g_specular) * visibility_shadow_mapping(frag_depth, frag_uv, bias) + g_ambient, vec3(1.0/2.2)), 1.0);
 }

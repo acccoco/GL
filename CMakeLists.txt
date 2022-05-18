@@ -73,29 +73,40 @@ include_directories(core ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 file(GLOB all_examples RELATIVE ${CMAKE_SOURCE_DIR}/examples ${CMAKE_SOURCE_DIR}/examples/*)
 foreach (example_name ${all_examples})
 
-    set(example_path ${CMAKE_SOURCE_DIR}/examples/${example_name})
-    set(example_shader_path ${CMAKE_SOURCE_DIR}/examples/${example_name}/shader)
+    # example 的文件夹，里面有 main.cpp 文件
+    set(example_dir ${CMAKE_SOURCE_DIR}/examples/${example_name})
+
+    # 位于 example 文件夹内，用于存放预处理后的 shader 文件
+    set(example_shader_dir ${CMAKE_SOURCE_DIR}/examples/${example_name}/shader)
 
     if (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/${example_name})
 
-        # 编译链接的目标
-        add_executable(${example_name} ${example_path}/main.cpp)
-        target_link_libraries(${example_name} ${LIB_LINKS})
-
         # 确保 examples/xxx/shader 文件夹存在
-        if ((NOT EXISTS ${example_shader_path}) OR (NOT IS_DIRECTORY ${example_shader_path}))
-            file(MAKE_DIRECTORY ${example_shader_path})
+        if ((NOT EXISTS ${example_shader_dir}) OR (NOT IS_DIRECTORY ${example_shader_dir}))
+            file(MAKE_DIRECTORY ${example_shader_dir})
         endif ()
 
         # 利用 m4 预处理 glsl 代码
-        file(GLOB shader_name_list RELATIVE ${example_path} ${example_path}/*.vert ${example_path}/*.frag)
+        # 让「可执行文件」依赖于「经过 m4 处理后的 shader 文件」
+        # 让「经过 m4 处理后的 shader 文件」依赖于「处理前的 shader 文件」
+        # 这样，只要修改了原始 shader 文件，就会触发一下的 m4 的预处理动作
+        file(GLOB shader_name_list RELATIVE ${example_dir} ${example_dir}/*.vert ${example_dir}/*.frag)
         foreach (shader_name ${shader_name_list})
-            add_custom_command(TARGET ${example_name}
-                    POST_BUILD  # 在 build 之后允许该命令
-                    COMMAND m4 --include=${GL_SHADER_DIR} ${example_path}/${shader_name} > ${example_shader_path}/${shader_name}
+            add_custom_command(
+                    OUTPUT ${example_shader_dir}/${shader_name}
+                    COMMAND m4 --include=${GL_SHADER_DIR} ${example_dir}/${shader_name} > ${example_shader_dir}/${shader_name}
                     COMMAND echo "preprocess ${shader_name}"
+                    DEPENDS ${example_dir}/${shader_name}
                     VERBATIM    # 允许 cmake 转义
-                    )
+            )
         endforeach ()
+
+        # 让可执行文件依赖于「经过 m4 处理后的 shader 文件」
+        set(example_shader_path ${shader_name_list})
+        list(TRANSFORM example_shader_path PREPEND "${example_shader_dir}/")
+
+        # 编译链接的目标
+        add_executable(${example_name} ${example_dir}/main.cpp ${example_shader_path})
+        target_link_libraries(${example_name} ${LIB_LINKS})
     endif ()
 endforeach ()

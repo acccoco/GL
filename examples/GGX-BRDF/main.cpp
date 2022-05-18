@@ -40,11 +40,13 @@ public:
 class AnisotropicBRDF : public Engine
 {
     Model model_sphere = Model::load_obj(MODEL_SPHERE)[0];
+    Model model_floor  = Model::load_obj(MODEL_GRAY_FLOOR)[0];
+    Model model_cube   = Model::load_obj(MODEL_CUBE)[0];
 
     GLuint tex_albedo    = TextureManager::load_texture_(fmt::format("{}{}", TEXTURE_PBR_BALL, "basecolor.png"));
     GLuint tex_roughness = TextureManager::load_texture_(fmt::format("{}{}", TEXTURE_PBR_BALL, "roughness.png"));
 
-    PointLight point_light{.pos = {0.f, 2.f, 3.f}, .color = {0.7f, 0.7f, 0.7f}};
+    PointLight point_light{.pos = {0.f, 5.f, 3.f}, .color = {0.7f, 0.7f, 0.7f}};
     glm::vec3  ambient_color = {0.2f, 0.2f, 0.2f};
 
     ShaderBRDF shader_brdf;
@@ -67,11 +69,11 @@ class AnisotropicBRDF : public Engine
         glBindTexture_(GL_TEXTURE_2D, 0, tex_albedo);
         glBindTexture_(GL_TEXTURE_2D, 1, tex_roughness);
         shader_brdf.set_uniform({
-                {shader_brdf.m_model, {._mat4 = model_sphere.model_matrix()}},
+                {shader_brdf.m_model, {._mat4 = model_floor.model_matrix()}},
                 {shader_brdf.tex_albedo, {._int = 0}},
                 {shader_brdf.tex_roughness, {._int = 1}},
         });
-        model_sphere.mesh.draw();
+        model_floor.mesh.draw();
     }
 
     void tick_gui() override
