@@ -35,7 +35,13 @@ struct DepthFramebuffer {
         depth_buffer = create_depth_buffer(size, size);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
-        shadow_map = create_tex(size, size);
+        shadow_map = new_tex2d({
+                .width           = size,
+                .height          = size,
+                .internal_format = GL_RGB32F,
+                .external_format = GL_RGB,
+                .external_type   = GL_FLOAT,
+        });
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadow_map, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)

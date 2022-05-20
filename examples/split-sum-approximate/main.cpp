@@ -40,9 +40,25 @@ struct SplitSumApproximate {
         glGenRenderbuffers(1, &depth_render_buffer);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_render_buffer);
 
-        filtered_env_map = SplitSumApproximate::create_cube_map(CUBE_SIZE);
+        filtered_env_map = new_cubemap({
+                .size            = CUBE_SIZE,
+                .internal_format = GL_RGB32F,
+                .external_format = GL_RGB,
+                .external_type   = GL_FLOAT,
+                // first linear: in a level; second linear: between level
+                .min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                .mip_map    = true,
+        });
 
-        brdf_lut = create_tex_2d(LUT_SIZE);
+        brdf_lut = new_tex2d({
+                .width           = LUT_SIZE,
+                .height          = LUT_SIZE,
+                .internal_format = GL_RG32F,
+                .external_format = GL_RG,
+                .external_type   = GL_FLOAT,
+                .wrap            = GL_CLAMP_TO_EDGE,
+                .filter          = GL_LINEAR,
+        });
     }
 
     void pre_filter_env_map(GLuint env_map)
@@ -94,44 +110,18 @@ struct SplitSumApproximate {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader_int_brdf.draw(model_square);
     }
-
-    static GLuint create_cube_map(GLsizei size)
-    {
-        GLuint cube_map;
-        glGenTextures(1, &cube_map);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
-        for (GLuint i = 0; i < 6; ++i)
-            // float 16bit, enough precision
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
-        for (auto param: {GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T})
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, param, GL_CLAMP_TO_EDGE);
-        // first linear: in a level; second linear: between level
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        // allocate enough memory
-        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-        return cube_map;
-    }
-
-    static GLuint create_tex_2d(GLsizei size)
-    {
-        GLuint tex;
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, size, size, 0, GL_RG, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        return tex;
-    }
 };
 
 class TestEngine : public Engine
 {
-    GLuint cube_map = load_cube_map(TEX_SKY + "sky_Right.png", TEX_SKY + "sky_Left.png", TEX_SKY + "sky_Up.png",
-                                    TEX_SKY + "sky_Down.png", TEX_SKY + "sky_Back.png", TEX_SKY + "sky_Front.png");
+    GLuint cube_map = load_cube_map({
+            .pos_x = TEX_SKY + "sky_Right.png",
+            .neg_x = TEX_SKY + "sky_Left.png",
+            .pos_y = TEX_SKY + "sky_Up.png",
+            .neg_y = TEX_SKY + "sky_Down.png",
+            .pos_z = TEX_SKY + "sky_Back.png",
+            .neg_z = TEX_SKY + "sky_Front.png",
+    });
 
     SplitSumApproximate split_sum;
 

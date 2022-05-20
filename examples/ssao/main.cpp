@@ -87,13 +87,15 @@ class SSAO : public Engine
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
         /// framebuffer: color attachment
-        tex_geometry = new_tex2d({.width           = framebuffer_size,
-                                  .height          = framebuffer_size,
-                                  .internal_format = GL_RGBA32F,
-                                  .external_format = GL_RGBA,
-                                  .external_type   = GL_FLOAT,
-                                  .wrap            = GL_REPEAT,
-                                  .filter          = GL_LINEAR});
+        tex_geometry = new_tex2d({
+                .width           = framebuffer_size,
+                .height          = framebuffer_size,
+                .internal_format = GL_RGBA32F,
+                .external_format = GL_RGBA,
+                .external_type   = GL_FLOAT,
+                .wrap            = GL_REPEAT,
+                .filter          = GL_LINEAR,
+        });
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_geometry, 0);
     }
 

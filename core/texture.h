@@ -37,31 +37,55 @@ public:
  * @field filter GL_LINEAR
  */
 struct Tex2DInfo {
-    GLsizei width, height;
-    GLint   internal_format;
-    GLenum  external_format;
-    GLenum  external_type;
-    GLint   wrap;
-    GLint   filter;
+    GLsizei width{}, height{};
+    GLint   internal_format{};
+    GLenum  external_format{};
+    GLenum  external_type{};
+    GLint   wrap   = GL_CLAMP_TO_EDGE;
+    GLint   filter = GL_LINEAR;
 };
-
-
 /// 新建一个空的 2d 纹理
 GLuint new_tex2d(const Tex2DInfo &info);
 
+
+/// cubemap 各个面的路径
+struct CubeMapPath {
+    std::string pos_x;
+    std::string neg_x;
+    std::string pos_y;
+    std::string neg_y;
+    std::string pos_z;
+    std::string neg_z;
+};
 /// 从文件中读取 cubemap
-GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x, const std::string &positive_y,
-                     const std::string &negative_y, const std::string &positive_z, const std::string &negative_z);
+GLuint load_cube_map(const CubeMapPath &tex_path);
 
 /// 创建 depth render buffer
 GLuint create_depth_buffer(GLsizei width = 1024, GLsizei height = 1024);
 
-/// 创建 2D 的纹理
-// @fixme：删除掉这个
-GLuint create_tex(GLsizei width = 1024, GLsizei height = 1024);
 
-/// 创建一个空的 cubemap
-GLuint create_cube_map(GLsizei size = 1024);
+/**
+ * 指定 cube map 的信息，用于创建
+ * @field internal_format GLRGB16F, ...
+ * @field external_format GL_RGB, ...
+ * @field external_type GL_UNSIGNED_TYTE, ...
+ * @field wrap GL_REPEAT, ...
+ * @field filter GL_LINEAR
+ * @field mipmap 是否生成 mipmap（预留空间）
+ */
+struct TexCubeInfo {
+    GLsizei size{};
+    GLint   internal_format{};
+    GLenum  external_format{};
+    GLenum  external_type{};
+    GLint   wrap       = GL_CLAMP_TO_EDGE;
+    GLint   min_filter = GL_LINEAR;
+    GLint   mag_filter = GL_LINEAR;
+    bool    mip_map    = false;
+};
+/// 创建一个空的 cube map
+GLuint new_cubemap(const TexCubeInfo &info);
+
 
 /// =================================================================
 
@@ -130,8 +154,8 @@ inline GLuint load_texture(const std::string &file_path)
     return texture_id;
 }
 
-inline GLuint load_cube_map(const std::string &positive_x, const std::string &negative_x, const std::string &positive_y,
-                            const std::string &negative_y, const std::string &positive_z, const std::string &negative_z)
+
+inline GLuint load_cube_map(const CubeMapPath &tex_path)
 {
     GLuint cube_map;
     glGenTextures(1, &cube_map);
@@ -151,13 +175,13 @@ inline GLuint load_cube_map(const std::string &positive_x, const std::string &ne
         stbi_image_free(data);
     };
 
-    SPDLOG_INFO("load cube map texture: {}", positive_x);
-    load_set(positive_x, GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-    load_set(negative_x, GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-    load_set(positive_y, GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-    load_set(negative_y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-    load_set(positive_z, GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
-    load_set(negative_z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+    SPDLOG_INFO("load cube map texture: {}", tex_path.pos_x);
+    load_set(tex_path.pos_x, GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+    load_set(tex_path.neg_x, GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+    load_set(tex_path.pos_y, GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+    load_set(tex_path.neg_y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+    load_set(tex_path.pos_z, GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+    load_set(tex_path.neg_z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 
     /* 多级纹理 */
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -183,41 +207,27 @@ inline GLuint create_depth_buffer(GLsizei width, GLsizei height)
     return render_buffer;
 }
 
-inline GLuint create_tex(GLsizei width, GLsizei height)
-{
-    GLuint tex_id;
-    glGenTextures(1, &tex_id);
-    glBindTexture(GL_TEXTURE_2D, tex_id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    return tex_id;
-}
-
-
-inline GLuint create_cube_map(GLsizei size)
+inline GLuint new_cubemap(const TexCubeInfo &info)
 {
     GLuint cube_map;
-
     glGenTextures(1, &cube_map);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map);
 
     // order: +x, -x, +y, -y, +z, -z
     for (int i = 0; i < 6; ++i)
     {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, info.internal_format, info.size, info.size, 0,
+                     info.external_format, info.external_type, nullptr);
     }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, info.wrap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, info.wrap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, info.wrap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, info.min_filter);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, info.mag_filter);
+
+    if (info.mip_map)
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     return cube_map;

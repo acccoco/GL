@@ -30,8 +30,15 @@ constexpr int SH_MAX_CNT = SH_ORDER * SH_ORDER;
 class EngineTest : public Engine
 {
     /// light
-    GLuint cubemap_indoor = load_cube_map(CUBE_INDOOR + "posx.jpg", CUBE_INDOOR + "negx.jpg", CUBE_INDOOR + "posy.jpg",
-                                          CUBE_INDOOR + "negy.jpg", CUBE_INDOOR + "posz.jpg", CUBE_INDOOR + "negz.jpg");
+    GLuint cubemap_indoor = load_cube_map({
+            .pos_x = CUBE_INDOOR + "posx.jpg",
+            .neg_x = CUBE_INDOOR + "negx.jpg",
+            .pos_y = CUBE_INDOOR + "posy.jpg",
+            .neg_y = CUBE_INDOOR + "negy.jpg",
+            .pos_z = CUBE_INDOOR + "posz.jpg",
+            .neg_z = CUBE_INDOOR + "negz.jpg",
+    });
+
     std::string                                  light_SH_path = EXAMPLES + "precompute-radiance-transport/light.txt";
     std::array<std::array<float, SH_MAX_CNT>, 3> light_SH_coeff{};
 

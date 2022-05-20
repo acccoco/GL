@@ -21,15 +21,26 @@ class EngineTest : public Engine
 
     std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
 
-    SkyBox skybox;
+    SkyBox        skybox;
     CubeMapVisual visual;
 
-    GLuint cube_cornell =
-            load_cube_map(CUBE_CORNELL + "posx.jpg", CUBE_CORNELL + "negx.jpg", CUBE_CORNELL + "posy.jpg",
-                          CUBE_CORNELL + "negy.jpg", CUBE_CORNELL + "posz.jpg", CUBE_CORNELL + "negz.jpg");
+    GLuint cube_cornell = load_cube_map({
+            .pos_x = CUBE_CORNELL + "posx.jpg",
+            .neg_x = CUBE_CORNELL + "negx.jpg",
+            .pos_y = CUBE_CORNELL + "posy.jpg",
+            .neg_y = CUBE_CORNELL + "negy.jpg",
+            .pos_z = CUBE_CORNELL + "posz.jpg",
+            .neg_z = CUBE_CORNELL + "negz.jpg",
+    });
 
-    GLuint cube_sky2 = load_cube_map(CUBE_SKY2 + "posx.jpg", CUBE_SKY2 + "negx.jpg", CUBE_SKY2 + "posy.jpg",
-                                     CUBE_SKY2 + "negy.jpg", CUBE_SKY2 + "posz.jpg", CUBE_SKY2 + "negz.jpg");
+    GLuint cube_sky2 = load_cube_map({
+            .pos_x = CUBE_SKY2 + "posx.jpg",
+            .neg_x = CUBE_SKY2 + "negx.jpg",
+            .pos_y = CUBE_SKY2 + "posy.jpg",
+            .neg_y = CUBE_SKY2 + "negy.jpg",
+            .pos_z = CUBE_SKY2 + "posz.jpg",
+            .neg_z = CUBE_SKY2 + "negz.jpg",
+    });
 
     void init() override
     {

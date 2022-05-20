@@ -23,10 +23,10 @@
 
 
 struct ThisFrameBuffer {
-    GLuint frame_buffer{};
-    GLuint depth_buffer;
-    GLuint tex_color;
-    const GLsizei WIDTH = 1024;
+    GLuint        frame_buffer{};
+    GLuint        depth_buffer;
+    GLuint        tex_color;
+    const GLsizei WIDTH  = 1024;
     const GLsizei HEIGHT = 1024;
 
     ThisFrameBuffer()
@@ -37,7 +37,13 @@ struct ThisFrameBuffer {
         depth_buffer = create_depth_buffer(WIDTH, HEIGHT);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
-        tex_color = create_tex(WIDTH, HEIGHT);
+        tex_color = new_tex2d({
+                .width           = WIDTH,
+                .height          = HEIGHT,
+                .internal_format = GL_RGB32F,
+                .external_format = GL_RGB,
+                .external_type   = GL_FLOAT,
+        });
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_color, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -49,11 +55,11 @@ class EngineTest : public Engine
 {
     ThisFrameBuffer framebuffer;
 
-    ShaderDiffuse shader_lambert;
+    ShaderDiffuse   shader_lambert;
     ShaderTexVisual shader_texvisual;
 
-    std::vector<Model> three_objs = Model::load_obj(MODEL_THREE_OBJS);
-    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
+    std::vector<Model> three_objs   = Model::load_obj(MODEL_THREE_OBJS);
+    Model              model_square = Model::load_obj(MODEL_SQUARE)[0];
 
     SkyBox skybox;
 
@@ -78,7 +84,8 @@ class EngineTest : public Engine
             shader_lambert.draw(m);
     }
 
-    void tick_render() override {
+    void tick_render() override
+    {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport_(0, 0, window.width, window.height);

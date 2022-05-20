@@ -8,10 +8,16 @@
 class SkyBox
 {
     ShaderSky shader_sky;
-    Model model_cube = Model::load_obj(MODEL_CUBE)[0];
-    GLuint default_sky_cubemap =
-            load_cube_map(TEX_SKY + "sky_Right.png", TEX_SKY + "sky_Left.png", TEX_SKY + "sky_Up.png",
-                          TEX_SKY + "sky_Down.png", TEX_SKY + "sky_Back.png", TEX_SKY + "sky_Front.png");
+    Model     model_cube = Model::load_obj(MODEL_CUBE)[0];
+
+    GLuint default_sky_cubemap = load_cube_map({
+            .pos_x = TEX_SKY + "sky_Right.png",
+            .neg_x = TEX_SKY + "sky_Left.png",
+            .pos_y = TEX_SKY + "sky_Up.png",
+            .neg_y = TEX_SKY + "sky_Down.png",
+            .pos_z = TEX_SKY + "sky_Back.png",
+            .neg_z = TEX_SKY + "sky_Front.png",
+    });
 
 public:
     // after exec, DEPTH_TEST will be enabled
@@ -29,7 +35,7 @@ public:
 class CubeMapVisual
 {
     ShaderSky shader_sky;
-    Model model_cube = Model::load_obj(MODEL_CUBE)[0];
+    Model     model_cube = Model::load_obj(MODEL_CUBE)[0];
 
 public:
     /// after exec, DEPTH_TEST will be enabled

@@ -20,9 +20,9 @@
 
 
 struct CubeFramebuffer {
-    GLuint frame_buffer{};
-    GLuint depth_buffer;
-    GLuint filtered_env_map;
+    GLuint        frame_buffer{};
+    GLuint        depth_buffer;
+    GLuint        filtered_env_map;
     const GLsizei size = 1024;
 
     CubeFramebuffer()
@@ -33,7 +33,12 @@ struct CubeFramebuffer {
         depth_buffer = create_depth_buffer(size, size);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
 
-        filtered_env_map = create_cube_map(size);
+        filtered_env_map = new_cubemap({
+                .size            = size,
+                .internal_format = GL_RGB32F,
+                .external_format = GL_RGB,
+                .external_type   = GL_FLOAT,
+        });
     }
 };
 
@@ -41,18 +46,19 @@ struct CubeFramebuffer {
 class EngineTest : public Engine
 {
     std::vector<Model> model_three = Model::load_obj(MODEL_THREE_OBJS);
-    std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
+    std::vector<Model> model_202   = Model::load_obj(MODEL_202_CHAN);
 
-    ShaderDiffuse shader_lambert;
+    ShaderDiffuse    shader_lambert;
     ShaderBlinnPhong shader_phong;
-    ShaderTexVisual shader_texvisual;
+    ShaderTexVisual  shader_texvisual;
 
     CubeFramebuffer buffer;
 
-    SkyBox sky_box;
+    SkyBox        sky_box;
     CubeMapVisual cube_visual;
 
-    void init() override {
+    void init() override
+    {
         glDepthFunc(GL_LEQUAL);
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 
@@ -85,12 +91,13 @@ class EngineTest : public Engine
         draw_dir(GL_TEXTURE_CUBE_MAP_POSITIVE_X, POSITIVE_X, -POSITIVE_Y);
         draw_dir(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, NEGATIVE_X, -POSITIVE_Y);
         draw_dir(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, POSITIVE_Z, -POSITIVE_Y);
-        draw_dir(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, NEGATIVE_Z, -POSITIVE_Y);  // front
+        draw_dir(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, NEGATIVE_Z, -POSITIVE_Y);    // front
         draw_dir(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, POSITIVE_Y, POSITIVE_Z);
-        draw_dir(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, NEGATIVE_Y, NEGATIVE_Z);   // down
+        draw_dir(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, NEGATIVE_Y, NEGATIVE_Z);    // down
     }
 
-    void tick_render() override {
+    void tick_render() override
+    {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport_(0, 0, window.width, window.height);
@@ -99,7 +106,7 @@ class EngineTest : public Engine
 
         shader_lambert.update_per_fame(Camera::proj_matrix());
         shader_lambert.update_per_fame(camera.view_matrix());
-        for (auto & m: model_202)
+        for (auto &m: model_202)
             shader_lambert.draw(m);
     }
 
