@@ -24,6 +24,7 @@ const char *MODEL_SPHERE        = "${GL_MODEL_DIR}/sphere/sphere.obj";
 const char *MODEL_BUNNY         = "${GL_MODEL_DIR}/bunny/bunny.obj";
 const char *MODEL_CORNER        = "${GL_MODEL_DIR}/corner/corner.obj";
 const char *MODEL_LUCY          = "${GL_MODEL_DIR}/lucy/lucy.obj";
+const char *MODEL_CORNELL_BOX   = "${GL_MODEL_DIR}/cornel-box/cornel-box.obj";
 
 
 // texture

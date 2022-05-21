@@ -9,9 +9,10 @@ class Engine
 {
 protected:
     struct {
-        GLFWwindow *ptr    = nullptr;
-        int         width  = 800;
-        int         height = 800;
+        GLFWwindow *ptr = nullptr;
+
+        int width  = 800;
+        int height = 800;
     } window;
 
     Camera       camera;
@@ -39,10 +40,13 @@ public:
         // window callback
         glfwSetCursorPosCallback(window.ptr, mouse_pos_callback);
         glfwSetMouseButtonCallback(window.ptr, mouse_button_callback);
+        glfwSetFramebufferSizeCallback(window.ptr, [](GLFWwindow *, int width, int height) {
+            SPDLOG_INFO("width: {}, height: {}", width, height);
+        });
 
         imgui_init(window.ptr);
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     }
 
     // tick order

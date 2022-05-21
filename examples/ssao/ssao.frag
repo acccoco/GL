@@ -28,7 +28,7 @@ const int   NUM_RINGS   = 5;
 const int   NUM_SAMPLES = 17;
 
 /// 计算 TBN 矩阵
-mat3 gen_TBN(vec3 N);
+mat3 gen_TBN(in vec3 N);
 
 /// 根据二维随机数生成一个半球方向
 vec3 rand_to_hemisphere(vec2 rand2);
@@ -55,7 +55,7 @@ void main() {
     else if (ssao_on)
         FragColor = vec4(kA * albedo * 0.2 + direct_color, 1.0);
     else
-        FragColor = vec4(direct_color, 1.0);
+        FragColor = vec4(albedo * 0.2 + direct_color, 1.0);
 }
 
 vec3 direct_shading(vec3 albedo)
@@ -119,7 +119,7 @@ float ssao(mat3 TBN)
 }
 
 
-mat3 gen_TBN(vec3 N)
+mat3 gen_TBN(in vec3 N)
 {
     vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent = normalize(cross(up, N));

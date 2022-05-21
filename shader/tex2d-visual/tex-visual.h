@@ -22,6 +22,11 @@ public:
         this->uniform_attrs_location_init();
     }
 
+    /**
+     * 纹理可视化
+     * @param model 应该是正方形
+     * @param tex_image_ 要可视化的纹理
+     */
     void draw(const Model &model, GLuint tex_image_)
     {
         glUseProgram(program_id);
@@ -33,5 +38,17 @@ public:
         });
 
         model.mesh.draw();
+    }
+
+    /**
+     * 纹理可视化
+     * @param model 应该是正方形
+     * @param tex_image_ 要可视化的纹理
+     * @param channel_ 显示哪些通道
+     */
+    void draw(const Model &model, GLuint tex_image_, int channel_)
+    {
+        this->set_uniform({{this->channel, {._int = channel_}}});
+        draw(model, tex_image_);
     }
 };

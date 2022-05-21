@@ -9,7 +9,6 @@
 #pragma once
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <utility>
 #include <functional>
@@ -172,7 +171,7 @@ inline void Shader::uniform_attrs_location_init()
     {
         attr->location = glGetUniformLocation(program_id, attr->name.c_str());
         if (attr->location == -1)
-            std::cout << "fail to get uniform location, name: " << attr->name.c_str() << std::endl;
+            SPDLOG_ERROR("fail to get uniform location, name: {}", attr->name);
     }
 }
 

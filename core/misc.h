@@ -64,6 +64,30 @@ inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, G
 }
 
 
+struct ViewPortInfo {
+    GLsizei width{};
+    GLsizei height{};
+    GLint x_cnt{};
+    GLint y_cnt{};
+    GLint x_idx{};
+    GLint y_idx{};
+    GLint x_len = 1;
+    GLint y_len = 1;
+};
+inline void glViewport_(const ViewPortInfo & info)
+{
+    auto x_delta  = info.width / info.x_cnt;
+    auto y_delta  = info.height / info.y_cnt;
+    auto x_width  = x_delta * info.x_len;
+    auto y_height = y_delta * info.y_len;
+#ifdef __APPLE__
+    glViewport(info.x_idx * x_delta * 2, info.y_idx * y_delta * 2, x_width * 2, y_height * 2);
+#else
+    glViewport(info.x_idx * x_delta, info.y_idx * y_delta, x_width, y_height);
+#endif
+}
+
+
 /**
  * 纹理绑定的简化写法
  * @param target GL_TEXTURE_2D, ...
