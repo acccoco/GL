@@ -1,6 +1,8 @@
 .DS_Store
 cmake-build-debug
 *.blend1
+*.blend
 .idea
+.vscode
 build
 examples/*/shader

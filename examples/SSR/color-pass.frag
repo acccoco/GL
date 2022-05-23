@@ -1,9 +1,9 @@
 #version 330 core
 
 const float PI = 3.141592653589793238;
-const float g_roughness = 0.2;
+const float g_roughness = 0.6;
 const float DELTA = 1e-6;
-const uint  SAMPLE_CNT = 8u;        // 采样的数量
+const uint  SAMPLE_CNT = 1u;        // 采样的数量
 
 in VS_FS {
     vec3 world_pos;
@@ -17,10 +17,10 @@ out vec4 out_fragcolor;
 uniform mat4 u_camera_vp_;
 uniform vec3 u_camera_pos;
 
-uniform sampler2D u_tex_depth_visibility;   // 摄像机坐标系下的 depth 和 visibility
 uniform sampler2D u_tex_world_pos;
 uniform sampler2D u_tex_world_normal;
 uniform sampler2D u_tex_direct_color;
+uniform vec3      u_tex_size;
 
 uniform bool      u_has_diffuse;
 uniform vec3      u_kd;
@@ -37,7 +37,6 @@ float camera_uv_depth(in vec3 world_pos, out vec2 camera_uv)
 {
     vec4 camera_clip = u_camera_vp_ * vec4(world_pos, 1.0);
     camera_uv = camera_clip.xy / camera_clip.w * 0.5 + 0.5;
-    camera_uv = clamp(camera_uv, vec2(0.0), vec2(1.0));
     return camera_clip.w;
 }
 
@@ -48,82 +47,83 @@ float camera_uv_depth(in vec3 world_pos, out vec2 camera_uv)
  * @param in  ray_dir    光线的方向，是单位向量
  * @param out inter_uv   交点在 camera 坐标系下的 uv
  */
-bool ray_march(in vec3 ray_origin, in vec3 ray_dir, out vec2 inter_uv)
+bool ray_march(in vec3 ray_origin_pos, in vec3 ray_dir, out vec2 inter_uv)
 {
-    const int   MAX_STEPS = 20;             // 最多走的步数
-    const float STEP_LEN = 0.1;             // 每步的长度
-    
-    bool  is_inter = false;                 // 是否和场景有交点
-    float ray_dis  = 0.0;                   // 光线走过的距离
-    for (int _ = 1; _ <= MAX_STEPS; ++_)
-    {
-        ray_dis += STEP_LEN;
-        vec3 ray_end_pos = ray_origin + ray_dir * ray_dis;
-        vec2 uv_in_camera;
-        float depth_in_camera = camera_uv_depth(ray_end_pos, uv_in_camera);
-        float depth_in_camera_min = texture(u_tex_depth_visibility, uv_in_camera).r;
-        if (depth_in_camera > depth_in_camera_min) {
-            is_inter = true;
+    const int   STEP2      = 10;            // 二分查找时走的步数
+    const float MAX_DIS    = 4.0;           // 最大查找距离（线性空间）
+    const float RESOLUTION = 0.1;           // 第一次查找时每一步的长度，1 表示逐像素
+    const float DEPTH_BIAS = 0.2;           // 视为相交的深度偏差
+
+    vec2  ray_origin_uv;                                                    // 光线起点在 view space 中的 uv 
+    float ray_origin_depth = camera_uv_depth(ray_origin_pos, ray_origin_uv);
+    vec2  ray_origin_frag  = ray_origin_uv * u_tex_size.xy;
+    vec3  ray_end_pos   = ray_origin_pos + ray_dir * MAX_DIS;               // 光线的终点
+    vec2  ray_end_uv;                                                       // 光线终点在 view space 中的 uv 
+    float ray_end_depth = camera_uv_depth(ray_end_pos, ray_end_uv);
+    vec2  ray_end_frag  = ray_end_uv * u_tex_size.xy;
+    vec2  delta_frag = ray_end_frag - ray_origin_frag;                      // 光线线段在 screen space 的变化值
+
+    float last_search = 0.0;        // 上一次 search 时位于光线线段的百分比（screen space）
+    float this_search = 0.0;        // 当前 search 时位于光线线段的白分比
+    vec2  cur_frag    = ray_origin_frag;
+
+
+    /// 第一次查找，每次的步长是相同的
+    float steps1    = max(abs(delta_frag.x), abs(delta_frag.y)) * RESOLUTION;   // 第一次查找走的总步数
+    vec2  increment = delta_frag / max(0.001, steps1);                          // 每次步进的距离（像素）
+    int   hit1 = 0;             // 是否有交点
+    for (int i = 0; i < int(steps1); ++i) {
+        cur_frag    += increment;
+        this_search = (cur_frag.x - ray_origin_frag.x) / delta_frag.x;
+        vec2 cur_uv = cur_frag / u_tex_size.xy;
+
+        // 计算当前 search point 对应的深度值，需要透视矫正
+        float cur_depth  = ray_origin_depth * ray_end_depth / mix(ray_end_depth, ray_origin_depth, this_search);
+
+        // 从摄像机向当前 search point 看，可以看到的点
+        vec3  min_pos   = texture(u_tex_world_pos, cur_uv).xyz;
+        float min_depth = (u_camera_vp_ * vec4(min_pos, 1.0)).w;
+
+        // 判断是否相交
+        float delta_depth = cur_depth - min_depth;
+        if (delta_depth > 0.0 && delta_depth < DEPTH_BIAS) {
+            hit1 = 1;
             break;
+        } else {
+            last_search = this_search;
         }
     }
 
-    camera_uv_depth(ray_origin + ray_dir * ray_dis, inter_uv);
-    return is_inter;
-}
 
+    /// 第二次查找，使用二分查找
+    int hit2 = 0;
+    float last_miss = last_search;      // last miss 的 percentage
+    float last_hit  = this_search;      // last hit  的 percentage
+    this_search = (last_search + this_search) * 0.5;
+    for (int i = 0; i < STEP2 * hit1; ++i) {
+        cur_frag        = mix(ray_origin_frag, ray_end_frag, this_search);
+        vec2 cur_uv     = cur_frag / u_tex_size.xy;
+        float cur_depth = ray_origin_depth * ray_end_depth / mix(ray_end_depth, ray_origin_depth, this_search);
 
-/// radical inverse van der corput
-float radical_inverse_VDC(in uint bits)
-{
-    bits = (bits << 16u) | (bits >> 16u);
-    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-    return float(bits) * 2.3283064365386963e-10;// / 0x100000000
-}
+        vec3 min_pos    = texture(u_tex_world_pos, cur_uv).xyz;
+        float min_depth = (u_camera_vp_ * vec4(min_pos, 1.0)).w;
 
+        float delta_depth = cur_depth - min_depth;
+        if (delta_depth > 0.0 && delta_depth < DEPTH_BIAS) {
+            hit2 = 1;
+            last_hit = this_search;
+            // 发生相交，去 last-miss 和 this-hit 中间继续找
+            this_search = (this_search + last_miss) * 0.5;
+        } else {
+            // last_search 就是 last-miss
+            last_miss = this_search;
+            // 没有相交：去 this-miss 和 last-hit 中间继续找
+            this_search = (this_search + last_hit) * 0.5;
+        }
+    }
 
-/// 低差异序列
-vec2 Hammersley(in uint i, in uint N)
-{
-    return vec2(float(i)/float(N), radical_inverse_VDC(i));
-}
-
-
-/**
- * GGX 采样
- * @param Xi 二维的随机数 [0, 1]^2
- */
-vec3 importance_sample_GGX(in vec2 Xi, in float roughness, in vec3 N, out float pdf)
-{
-    float a = roughness * roughness;    // better visual effect
-    float a2 = a * a;
-
-    // uniform distribution to GGX distribution
-    float phi = 2 * PI * Xi.x;
-    float cos_theta = sqrt((1.0 - Xi.y) / (1 + (a2 - 1) * Xi.y));
-    float cos_theta2 = cos_theta * cos_theta;
-    float sin_theta = sqrt(1 - cos_theta2);
-
-    // half-way vector in tagent space
-    vec3 H;
-    H.x = sin_theta * cos(phi);
-    H.y = sin_theta * sin(phi);
-    H.z = cos_theta;
-
-    // tangent space base vector
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
-
-    // pdf
-    float deno = PI * pow((1 + cos_theta2 * (a2 - 1.0)), 2.0) + DELTA;
-    pdf = a2 * sin_theta * cos_theta / deno + DELTA;
-
-    // tangent space to world space
-    return normalize(tangent * H.x + bitangent * H.y + N * H.z);
+    inter_uv = mix(ray_origin_frag, ray_end_frag, this_search) / u_tex_size.xy;
+    return hit2 == 1;
 }
 
 
@@ -137,12 +137,13 @@ vec3 indirect_shading(in vec3 albedo)
 
     vec3 color = vec3(0.0);
     for (uint i = 0u; i < SAMPLE_CNT; ++i) {
-        float pdf;
-        vec3 h = importance_sample_GGX(Hammersley(i, SAMPLE_CNT), g_roughness, n, pdf);
-        vec3 light_dir = normalize(reflect(h, -v));
+        vec3 h = n;
+        vec3 light_dir = normalize(reflect(-v, -h));
 
         vec2 inter_uv;
         if (!ray_march(vs_fs.world_pos, light_dir, inter_uv)) 
+            continue;
+        if (inter_uv.x < 0.0 || inter_uv.x > 1.0 || inter_uv.y < 0.0 || inter_uv.y > 1.0)
             continue;
 
         vec3 inter_pos = texture(u_tex_world_pos, inter_uv).xyz;
@@ -154,7 +155,7 @@ vec3 indirect_shading(in vec3 albedo)
             continue;
         
         vec3 Li = texture(u_tex_direct_color, inter_uv).rgb;
-        color += Li * albedo / PI * max(0.0, dot(n, l)) * 10.0;  // TODO pdf
+        color += Li * albedo / PI * max(0.0, dot(n, l)) * 10.0;  // FIXME pdf
     }
     
     return color / float(SAMPLE_CNT);
