@@ -11,70 +11,13 @@
 #include "core/model.h"
 #include "core/light.h"
 #include "core/misc.h"
+#include "core/shader2.h"
 #include "shader/tex2d-visual/tex-visual.h"
 #include "shader/diffuse/diffuse.h"
+#include "functions/axis.h"
 
 const std::string CUR        = EXAMPLES + "SSR/";
 const std::string CUR_SHADER = CUR + "shader/";
-
-class ShaderShadowPass : public Shader
-{
-public:
-    UniformAttribute u_light_mvp = {"u_light_mvp", this, MAT4};
-
-    ShaderShadowPass()
-        : Shader(CUR_SHADER + "shadow-pass.vert", CUR_SHADER + "shadow-pass.frag")
-    {
-        this->uniform_attrs_location_init();
-    }
-};
-
-class ShaderGeometryPass : public Shader
-{
-public:
-    UniformAttribute u_camera_vp = {"u_camera_vp", this, MAT4};
-
-    UniformAttribute u_model       = {"u_model", this, MAT4};
-    UniformAttribute u_has_diffuse = {"u_has_diffuse", this, INT};
-    UniformAttribute u_kd          = {"u_kd", this, VEC3};
-    UniformAttribute u_tex_diffse  = {"u_tex_diffuse", this, INT};
-
-    UniformAttribute u_shadow_map  = {"u_shadow_map", this, INT};
-    UniformAttribute u_light_dir   = {"u_light_dir", this, VEC3};
-    UniformAttribute u_light_color = {"u_light_color", this, VEC3};
-    UniformAttribute u_light_vp    = {"u_light_vp", this, MAT4};
-
-    ShaderGeometryPass()
-        : Shader(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag")
-    {
-        this->uniform_attrs_location_init();
-    }
-};
-
-class ShaderColorPass : public Shader
-{
-public:
-    UniformAttribute u_camera_vp  = {"u_camera_vp", this, MAT4};
-    UniformAttribute u_camera_vp_ = {"u_camera_vp_", this, MAT4};
-    UniformAttribute u_camera_pos = {"u_camera_pos", this, VEC3};
-
-    UniformAttribute u_model       = {"u_model", this, MAT4};
-    UniformAttribute u_has_diffuse = {"u_has_diffuse", this, INT};
-    UniformAttribute u_kd          = {"u_kd", this, VEC3};
-    UniformAttribute u_tex_diffuse = {"u_tex_diffuse", this, INT};
-
-    // UniformAttribute u_tex_depth_visibility = {"u_tex_depth_visibility", this, INT};
-    UniformAttribute u_tex_world_pos    = {"u_tex_world_pos", this, INT};
-    UniformAttribute u_tex_world_normal = {"u_tex_world_normal", this, INT};
-    UniformAttribute u_tex_direct_color = {"u_tex_direct_color", this, INT};
-    UniformAttribute u_tex_size         = {"u_tex_size", this, VEC3};
-
-    ShaderColorPass()
-        : Shader(CUR_SHADER + "color-pass.vert", CUR_SHADER + "color-pass.frag")
-    {
-        this->uniform_attrs_location_init();
-    }
-};
 
 
 class SSR : public Engine
@@ -121,9 +64,9 @@ class SSR : public Engine
     std::vector<Model> model_three   = Model::load_obj(MODEL_THREE_OBJS);
     std::vector<Model> model_cornell = Model::load_obj(MODEL_CORNELL_BOX);
 
-    ShaderShadowPass   shader_s_pass;
-    ShaderGeometryPass shader_g_pass;
-    ShaderColorPass    shader_c_pass;
+    Shader2 shader_shadow_pass   = Shader2(CUR_SHADER + "shadow-pass.vert", CUR_SHADER + "shadow-pass.frag");
+    Shader2 shader_geometry_pass = Shader2(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag");
+    Shader2 shader_color_pass    = Shader2(CUR_SHADER + "color-pass.vert", CUR_SHADER + "color-pass.frag");
 
     /// 光源可视化
     ShaderDiffuse shader_diffuse;
@@ -133,6 +76,8 @@ class SSR : public Engine
     Model           model_square = Model::load_obj(MODEL_SQUARE)[0];
     ShaderTexVisual shader_tex_visual;
 
+    // 坐标轴
+    Axis axis;
 
 public:
     void init() override
@@ -167,8 +112,8 @@ public:
 
         for (auto &m: scene)
         {
-            shader_s_pass.set_uniform({
-                    {shader_s_pass.u_light_mvp, {._mat4 = light_vp * m.model_matrix()}},
+            shader_shadow_pass.set_uniform({
+                    {"u_light_mvp", MAT4, {._mat4 = light_vp * m.model_matrix()}},
             });
             m.mesh.draw();
         }
@@ -181,23 +126,23 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindTexture_(GL_TEXTURE_2D, 0, shadow_pass_data.shadow_map);
-        shader_g_pass.set_uniform({
-                {shader_g_pass.u_camera_vp, {._mat4 = camera_vp}},
-                {shader_g_pass.u_shadow_map, {._int = 0}},
-                {shader_g_pass.u_light_dir, {._vec3 = light.target - light.pos}},
-                {shader_g_pass.u_light_color, {._vec3 = light.color}},
-                {shader_g_pass.u_light_vp, {._mat4 = light_vp}},
+        shader_geometry_pass.set_uniform({
+                {"u_camera_vp", MAT4, {._mat4 = camera_vp}},
+                {"u_shadow_map", INT, {._int = 0}},
+                {"u_light_dir", VEC3, {._vec3 = light.target - light.pos}},
+                {"u_light_color", VEC3, {._vec3 = light.color}},
+                {"u_light_vp", MAT4, {._mat4 = light_vp}},
         });
 
         for (auto &m: scene)
         {
             if (m.tex_diffuse.has)
                 glBindTexture_(GL_TEXTURE_2D, 1, m.tex_diffuse.id);
-            shader_g_pass.set_uniform({
-                    {shader_g_pass.u_model, {._mat4 = m.model_matrix()}},
-                    {shader_g_pass.u_has_diffuse, {._int = m.tex_diffuse.has}},
-                    {shader_g_pass.u_kd, {._vec3 = m.color_diffuse}},
-                    {shader_g_pass.u_tex_diffse, {._int = 1}},
+            shader_geometry_pass.set_uniform({
+                    {"u_model", MAT4, {._mat4 = m.model_matrix()}},
+                    {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
+                    {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
+                    {"u_tex_diffuse", INT, {._int = 1}},
             });
             m.mesh.draw();
         }
@@ -207,63 +152,62 @@ public:
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport_({
-                .width  = 1200,
-                .height = 800,
-                .x_cnt  = 6,
-                .y_cnt  = 4,
-                .x_idx  = 0,
-                .y_idx  = 0,
-                .x_len  = 4,
-                .y_len  = 4,
-        });
+        glViewport_(
+                {.width = 1200, .height = 800, .x_cnt = 6, .y_cnt = 4, .x_idx = 0, .y_idx = 0, .x_len = 4, .y_len = 4});
 
         glBindTexture_(GL_TEXTURE_2D, 0, geometry_pass_data.tex_depth_visibility);
         glBindTexture_(GL_TEXTURE_2D, 1, geometry_pass_data.tex_position);
         glBindTexture_(GL_TEXTURE_2D, 2, geometry_pass_data.tex_normal);
         glBindTexture_(GL_TEXTURE_2D, 3, geometry_pass_data.tex_direct_color);
-        shader_c_pass.set_uniform({
-                {shader_c_pass.u_camera_vp, {._mat4 = camera_vp}},
-                {shader_c_pass.u_camera_vp_, {._mat4 = camera_vp}},
-                {shader_c_pass.u_camera_pos, {._vec3 = camera.get_pos()}},
-                {shader_c_pass.u_tex_size, {._vec3 = {geometry_pass_data.size, geometry_pass_data.size, 0.f}}},
-                {shader_c_pass.u_tex_world_pos, {._int = 1}},
-                {shader_c_pass.u_tex_world_normal, {._int = 2}},
-                {shader_c_pass.u_tex_direct_color, {._int = 3}},
+        shader_color_pass.set_uniform({
+                {"u_camera_vp", MAT4, {._mat4 = camera_vp}},
+                {"u_camera_vp_", MAT4, {._mat4 = camera_vp}},
+                {"u_camera_pos", VEC3, {._vec3 = camera.get_pos()}},
+                {"u_tex_size", VEC3, {._vec3 = {geometry_pass_data.size, geometry_pass_data.size, 0.f}}},
+                {"u_tex_world_pos", INT, {._int = 1}},
+                {"u_tex_world_normal", INT, {._int = 2}},
+                {"u_tex_direct_color", INT, {._int = 3}},
         });
 
         for (auto &m: scene)
         {
             if (m.tex_diffuse.has)
                 glBindTexture_(GL_TEXTURE_2D, 4, m.tex_diffuse.id);
-            shader_c_pass.set_uniform({
-                    {shader_c_pass.u_model, {._mat4 = m.model_matrix()}},
-                    {shader_c_pass.u_has_diffuse, {._int = m.tex_diffuse.has}},
-                    {shader_c_pass.u_kd, {._vec3 = m.color_diffuse}},
-                    {shader_c_pass.u_tex_diffuse, {._int = 4}},
+            shader_color_pass.set_uniform({
+                    {"u_model", MAT4, {._mat4 = m.model_matrix()}},
+                    {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
+                    {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
+                    {"u_tex_diffuse", INT, {._int = 4}},
             });
             m.mesh.draw();
         }
 
         /// 光源可视化
-        shader_diffuse.set_uniform({
-                {shader_diffuse.m_proj, {._mat4 = Camera::proj_matrix()}},
-                {shader_diffuse.m_view, {._mat4 = camera.view_matrix()}},
-        });
-        glm::vec3 scale = {0.2f, 0.2f, 0.2f};
-        glm::mat4 m1    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.pos), scale);
-        glm::mat4 m2    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.target), scale);
-
-        auto draw = [&](const glm::mat4 &mat) {
+        {
             shader_diffuse.set_uniform({
-                    {shader_diffuse.has_diffuse, {._int = 0}},
-                    {shader_diffuse.kd, {._vec3 = {0.9f, 0.9f, 0.9f}}},
-                    {shader_diffuse.m_model, {._mat4 = mat}},
+                    {shader_diffuse.m_proj, {._mat4 = Camera::proj_matrix()}},
+                    {shader_diffuse.m_view, {._mat4 = camera.view_matrix()}},
             });
-            model_cube.mesh.draw();
-        };
-        draw(m1);
-        draw(m2);
+            glm::vec3 scale = {0.2f, 0.2f, 0.2f};
+            glm::mat4 m1    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.pos), scale);
+            glm::mat4 m2    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.target), scale);
+
+            auto draw = [&](const glm::mat4 &mat) {
+                shader_diffuse.set_uniform({
+                        {shader_diffuse.has_diffuse, {._int = 0}},
+                        {shader_diffuse.kd, {._vec3 = {0.9f, 0.9f, 0.9f}}},
+                        {shader_diffuse.m_model, {._mat4 = mat}},
+                });
+                model_cube.mesh.draw();
+            };
+            draw(m1);
+            draw(m2);
+        }
+
+        /// 参考轴
+        {
+            axis.draw(camera_vp);
+        }
     }
 
     void debug_pass()

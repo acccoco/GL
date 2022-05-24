@@ -175,7 +175,7 @@ inline void Shader::uniform_attrs_location_init()
     }
 }
 
-void Shader::set_uniform(const std::vector<UniAttrAssign> &uni_attr_assign_list) const
+inline void Shader::set_uniform(const std::vector<UniAttrAssign> &uni_attr_assign_list) const
 {
     this->use();
     for (auto &assign: uni_attr_assign_list)

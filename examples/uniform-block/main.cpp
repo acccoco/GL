@@ -9,6 +9,7 @@
 #include "core/mesh.h"
 #include "core/model.h"
 #include "core/shader.h"
+#include "functions/axis.h"
 
 
 /// uniform block 成员的 align
@@ -71,6 +72,8 @@ class EngineTest : public Engine
     GLuint ubo_simple{};
     GLuint ubo_mat{};
 
+    Axis axis;
+
     /// model
     std::vector<Model> model_diona = Model::load_obj(MODEL_DIONA);
 
@@ -108,6 +111,8 @@ class EngineTest : public Engine
         /// 绘制模型
         for (auto &m: model_diona)
             shader_diffuse.draw(m);
+
+        axis.draw(Camera::proj_matrix() * camera.view_matrix());
     }
 
     void tick_gui() override {}

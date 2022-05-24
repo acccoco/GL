@@ -53,34 +53,40 @@ public:
     //   tick logic -> tick camera -> tick gui -> tick render
     void engine_main()
     {
-        init();
-
-        glEnable(GL_DEPTH_TEST);
-        while (!glfwWindowShouldClose(window.ptr))
+        try
         {
-            // tick logic
-            glfwPollEvents();
-            check_close_window(window.ptr);
-            tick_logic();
+            init();
 
-            // tick camera
-            camera.update_position(window.ptr);
-            camera.update_dir_eular();
+            glEnable(GL_DEPTH_TEST);
+            while (!glfwWindowShouldClose(window.ptr))
+            {
+                // tick logic
+                glfwPollEvents();
+                check_close_window(window.ptr);
+                tick_logic();
 
-            // tick gui
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-            tick_gui();
-            ImGui::Render();
+                // tick camera
+                camera.update_position(window.ptr);
+                camera.update_dir_eular();
 
-            // tick render
-            tick_pre_render();
-            tick_render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            glfwSwapBuffers(window.ptr);
+                // tick gui
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+                tick_gui();
+                ImGui::Render();
+
+                // tick render
+                tick_pre_render();
+                tick_render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                glfwSwapBuffers(window.ptr);
+            }
+            glfwDestroyWindow(window.ptr);
+            glfwTerminate();
+        } catch (std::exception &e)
+        {
+            SPDLOG_ERROR("exception occurs, exit.");
         }
-        glfwDestroyWindow(window.ptr);
-        glfwTerminate();
     }
 };
