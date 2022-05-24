@@ -29,14 +29,7 @@ struct CameraDirDrawCube {
 };
 
 
-inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height)
-{
-#ifdef __APPLE__
-    glViewport(x * 2, y * 2, width * 2, height * 2);
-#else
-    glViewport(x, y, width, height);
-#endif
-}
+inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height) { glViewport(x, y, width, height); }
 
 /**
  * 设置屏幕上的显示区域
@@ -56,35 +49,29 @@ inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, G
     auto y_delta  = height / ycnt;
     auto x_width  = x_delta * xlen;
     auto y_height = y_delta * ylen;
-#ifdef __APPLE__
-    glViewport(xidx * x_delta * 2, yidx * y_delta * 2, x_width * 2, y_height * 2);
-#else
+
     glViewport(xidx * x_delta, yidx * y_delta, x_width, y_height);
-#endif
 }
 
 
 struct ViewPortInfo {
     GLsizei width{};
     GLsizei height{};
-    GLint x_cnt{};
-    GLint y_cnt{};
-    GLint x_idx{};
-    GLint y_idx{};
-    GLint x_len = 1;
-    GLint y_len = 1;
+    GLint   x_cnt{};
+    GLint   y_cnt{};
+    GLint   x_idx{};
+    GLint   y_idx{};
+    GLint   x_len = 1;
+    GLint   y_len = 1;
 };
-inline void glViewport_(const ViewPortInfo & info)
+inline void glViewport_(const ViewPortInfo &info)
 {
     auto x_delta  = info.width / info.x_cnt;
     auto y_delta  = info.height / info.y_cnt;
     auto x_width  = x_delta * info.x_len;
     auto y_height = y_delta * info.y_len;
-#ifdef __APPLE__
-    glViewport(info.x_idx * x_delta * 2, info.y_idx * y_delta * 2, x_width * 2, y_height * 2);
-#else
+
     glViewport(info.x_idx * x_delta, info.y_idx * y_delta, x_width, y_height);
-#endif
 }
 
 

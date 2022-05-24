@@ -11,8 +11,8 @@ protected:
     struct {
         GLFWwindow *ptr = nullptr;
 
-        int width  = 800;
-        int height = 800;
+        int width  = 1600;
+        int height = 1600;
     } window;
 
     Camera       camera;
@@ -29,8 +29,9 @@ public:
         spdlog_init();
         glfw_init();
 
-        // create window
-        window.ptr = glfwCreateWindow(window.width, window.height, "RTR", nullptr, nullptr);
+        /// create window\n
+        /// 与 glfw 相关的操作，提供的尺寸是真实尺寸（frambuffer）的一半
+        window.ptr = glfwCreateWindow(window.width / 2, window.height / 2, "RTR", nullptr, nullptr);
         if (!window.ptr)
             std::cout << "fail to create window." << std::endl;
         glfwMakeContextCurrent(window.ptr);
@@ -47,6 +48,19 @@ public:
         imgui_init(window.ptr);
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    }
+
+    void set_window_size(int width, int height)
+    {
+        this->window.width  = width;
+        this->window.height = height;
+
+#ifdef __APPLE__
+        /// glfw 相关的操作，窗口尺寸是实际尺寸（和 framebuffer 尺寸相同）的一半
+        glfwSetWindowSize(window.ptr, width / 2, height / 2);
+#elif
+        glfwSetWindowSize(window.ptr, width, height);
+#endif
     }
 
     // tick order

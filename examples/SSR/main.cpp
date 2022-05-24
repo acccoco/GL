@@ -85,8 +85,7 @@ public:
         this->shadow_pass_init();
         this->geometry_pass_init();
 
-        /// 在 mac 中，对应的实际尺寸是 2400 * 1600
-        glfwSetWindowSize(window.ptr, 1200, 800);
+        this->set_window_size(2400, 1600);
 
         scene = model_three;
     }
@@ -152,8 +151,14 @@ public:
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport_(
-                {.width = 1200, .height = 800, .x_cnt = 6, .y_cnt = 4, .x_idx = 0, .y_idx = 0, .x_len = 4, .y_len = 4});
+        glViewport_({.width  = window.width,
+                     .height = window.width,
+                     .x_cnt  = 6,
+                     .y_cnt  = 4,
+                     .x_idx  = 0,
+                     .y_idx  = 0,
+                     .x_len  = 4,
+                     .y_len  = 4});
 
         glBindTexture_(GL_TEXTURE_2D, 0, geometry_pass_data.tex_depth_visibility);
         glBindTexture_(GL_TEXTURE_2D, 1, geometry_pass_data.tex_position);
@@ -215,8 +220,8 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         ViewPortInfo viewport_info = {
-                .width  = 1200,
-                .height = 800,
+                .width  = window.width,
+                .height = window.height,
                 .x_cnt  = 6,
                 .y_cnt  = 4,
                 .x_len  = 1,
