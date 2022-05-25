@@ -22,7 +22,8 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
 Cpp11BracedListStyle: true
-# BinPackArguments: false
+BinPackArguments: true
+BinPackParameters: true
 
 BreakBeforeBraces: Custom
 BraceWrapping:

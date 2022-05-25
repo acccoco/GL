@@ -28,6 +28,21 @@ public:
     }
 };
 
+
+/// opengl 的 external format
+struct GLExternalFormat {
+    GLenum format;
+    GLenum type;
+};
+
+/// opengl internal format 和 external format 的对应表
+inline static std::unordered_map<GLint, GLExternalFormat> gl_format_lut = {
+        {GL_RGB32F, {.format = GL_RGB, .type = GL_FLOAT}},   {GL_RGB16F, {.format = GL_RGB, .type = GL_FLOAT}},
+        {GL_RGBA32F, {.format = GL_RGBA, .type = GL_FLOAT}}, {GL_RGBA16F, {.format = GL_RGBA, .type = GL_FLOAT}},
+        {GL_R32F, {.format = GL_RED, .type = GL_FLOAT}},
+};
+
+
 /**
  * 指定 texture 2D 的信息，用于创建 texture 2D
  * @field internal_format GLRGB16F, ...
@@ -83,6 +98,7 @@ struct TexCubeInfo {
     GLint   mag_filter = GL_LINEAR;
     bool    mip_map    = false;
 };
+
 /// 创建一个空的 cube map
 GLuint new_cubemap(const TexCubeInfo &info);
 
@@ -96,8 +112,16 @@ inline GLuint new_tex2d(const Tex2DInfo &info)
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, info.internal_format, info.width, info.height, 0, info.external_format,
-                 info.external_type, nullptr);
+    /// 根据 internal format 查询 external format
+    auto external_ptr = gl_format_lut.find(info.internal_format);
+    if (external_ptr == gl_format_lut.end())
+    {
+        SPDLOG_ERROR("unknow internal format: {}", info.internal_format);
+        throw std::exception();
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, info.internal_format, info.width, info.height, 0, external_ptr->second.format,
+                 external_ptr->second.type, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, info.wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, info.wrap);

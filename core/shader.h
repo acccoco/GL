@@ -139,7 +139,10 @@ inline GLuint shader_compile(const std::string &file_path, GLenum shader_type)
     std::stringstream ss;
     fs.open(file_path, std::ios::in);
     if (!fs.is_open())
-        std::cout << "fail to open file: " << file_path << std::endl;
+    {
+        SPDLOG_ERROR("fail to open file: {}", file_path);
+        throw(std::exception());
+    }
     for (std::string str; std::getline(fs, str); ss << str << '\n')
         ;
     fs.close();
@@ -158,8 +161,8 @@ inline GLuint shader_compile(const std::string &file_path, GLenum shader_type)
     if (!success)
     {
         glGetShaderInfoLog(shader_id, 512, nullptr, info);
-        std::cout << "shader compile error: " << file_path << std::endl;
-        std::cout << info << std::endl;
+        SPDLOG_ERROR("shader compile error: {}, info: \n{}", file_path, info);
+        throw(std::exception());
     }
 
     return shader_id;
@@ -200,8 +203,8 @@ inline GLuint shader_link(GLuint vertex, GLuint fragment, GLuint geometry)
     if (!success)
     {
         glGetProgramInfoLog(program_id, 512, nullptr, info);
-        std::cout << "shader link error." << std::endl;
-        std::cout << info << std::endl;
+        SPDLOG_ERROR("shader link error, info: {}", info);
+        throw(std::exception());
     }
     return program_id;
 }

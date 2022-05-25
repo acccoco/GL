@@ -9,8 +9,6 @@ out VS_FS {
 } vs_fs;
 
 
-
-
 void main() {
     gl_Position = vec4(in_pos.xy, 0, 1);
     vs_fs.uv = in_texcoord;

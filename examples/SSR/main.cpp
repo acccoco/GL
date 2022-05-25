@@ -22,31 +22,66 @@ const std::string CUR_SHADER = CUR + "shader/";
 
 class SSR : public Engine
 {
+    /// 窗口的尺寸：1600 x 1600 用于显示，600 x 1600 用于展示 texture
+    const int window_width  = 2400;
+    const int window_height = 1600;
+
     /// shadow pass 需要的数据
-    struct {
-        GLuint framebuffer{};
-        GLuint shadow_map{};
-
+    struct LightPassData {
         const GLsizei size = 512;
-    } shadow_pass_data;
 
-    /// 初始化 shadow pass 用到的 framebuffer 和纹理等
-    void shadow_pass_init();
-
-    /// color pass 需要的数据
-    struct {
         GLuint framebuffer{};
-        GLuint tex_position{};            // layout 0
-        GLuint tex_normal{};              // layout 1
-        GLuint tex_depth_visibility{};    // layout 2  R 通道是深度，G 通道是 visibility
-        GLuint tex_direct_color{};        // layout 3
+        GLuint shadow_map   = new_tex2d({.width = size, .height = size, .internal_format = GL_R32F});
+        GLuint depth_buffer = create_depth_buffer(size, size);
 
-        // FIXME 这个应该和 window size 一致，优化一下，而不是硬编码
+        Shader2 shader = Shader2(CUR_SHADER + "light-pass.vert", CUR_SHADER + "light-pass.frag");
+
+        LightPassData()
+        {
+            glGenFramebuffers(1, &framebuffer);
+            framebuffer_bind(framebuffer, depth_buffer, {shadow_map});
+        }
+    } light_pass_cfg;
+
+    /// geometry pass 需要的数据
+    struct GeometryPassData {
         const GLsizei size = 1600;
+
+        GLuint framebuffer{};
+        GLuint depth_buffer = create_depth_buffer(size, size);
+
+        /// view-space 下的坐标
+        GLuint tex_pos_view = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        /// view-space 下的法线
+        GLuint tex_normal_view = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        /// 材质信息：diffuse albedo
+        GLuint tex_diffuse = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+
+        Shader2 shader = Shader2(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag");
+
+        GeometryPassData()
+        {
+            glGenFramebuffers(1, &framebuffer);
+            framebuffer_bind(framebuffer, depth_buffer, {tex_pos_view, tex_normal_view, tex_diffuse});
+        }
     } geometry_pass_data;
 
-    /// 初始化 geometry pass 用到的 framebuffer 和纹理等
-    void geometry_pass_init();
+    struct SSRPassData {
+        const GLsizei size = 1600;
+
+        GLuint framebuffer{};
+        GLuint depth_buffer = create_depth_buffer(size, size);
+        GLuint tex_ssr_uv   = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+
+        Shader2 shader = Shader2(CUR_SHADER + "ssr-pass.vert", CUR_SHADER + "ssr-pass.frag");
+
+        SSRPassData()
+        {
+            glGenFramebuffers(1, &framebuffer);
+            framebuffer_bind(framebuffer, depth_buffer, {tex_ssr_uv});
+        }
+
+    } ssr_pass_data;
 
     /// 场景中的方向光
     struct {
@@ -55,37 +90,35 @@ class SSR : public Engine
         glm::vec3 color  = {0.7f, 0.7f, 0.7f};
 
         /// 这里是正交投影！！！！
-        const glm::mat4 proj_matrix = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1e-2f, 100.f);
-
+        const glm::mat4         proj_matrix = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1e-2f, 100.f);
         [[nodiscard]] glm::mat4 view_matrix_get() const { return glm::lookAt(pos, target, POSITIVE_Y); }
+        [[nodiscard]] glm::vec3 light_dir() const { return target - pos; }
     } light;
 
+    /// 场景中的模型信息
     std::vector<Model> scene;
     std::vector<Model> model_three   = Model::load_obj(MODEL_THREE_OBJS);
     std::vector<Model> model_cornell = Model::load_obj(MODEL_CORNELL_BOX);
 
-    Shader2 shader_shadow_pass   = Shader2(CUR_SHADER + "shadow-pass.vert", CUR_SHADER + "shadow-pass.frag");
-    Shader2 shader_geometry_pass = Shader2(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag");
-    Shader2 shader_color_pass    = Shader2(CUR_SHADER + "color-pass.vert", CUR_SHADER + "color-pass.frag");
+    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
+    Model model_cube   = Model::load_obj(MODEL_CUBE)[0];
+
+    Shader2 shader = Shader2(CUR_SHADER + "color-pass.vert", CUR_SHADER + "color-pass.frag");
 
     /// 光源可视化
     ShaderDiffuse shader_diffuse;
-    Model         model_cube = Model::load_obj(MODEL_CUBE)[0];
 
     /// 纹理可视化
-    Model           model_square = Model::load_obj(MODEL_SQUARE)[0];
     ShaderTexVisual shader_tex_visual;
 
-    // 坐标轴
+    /// 坐标轴
     Axis axis;
+
 
 public:
     void init() override
     {
-        this->shadow_pass_init();
-        this->geometry_pass_init();
-
-        this->set_window_size(2400, 1600);
+        this->set_window_size(window_width, window_height);
 
         scene = model_three;
     }
@@ -94,166 +127,22 @@ public:
     {
         glClearColor(0.f, 0.f, 0.f, 0.f);
 
-        glm::mat4 light_vp  = light.proj_matrix * light.view_matrix_get();
-        glm::mat4 camera_vp = Camera::proj_matrix() * camera.view_matrix();
-
-        shadow_pass(light_vp);
-        geometry_pass(light_vp, camera_vp);
-        color_pass(camera_vp);
+        light_pass();
+        geometry_pass();
+        ssr_pass();
+        color_pass();
         debug_pass();
     }
 
-    void shadow_pass(const glm::mat4 &light_vp)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, shadow_pass_data.framebuffer);
-        glViewport(0, 0, shadow_pass_data.size, shadow_pass_data.size);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    void light_pass();
 
-        for (auto &m: scene)
-        {
-            shader_shadow_pass.set_uniform({
-                    {"u_light_mvp", MAT4, {._mat4 = light_vp * m.model_matrix()}},
-            });
-            m.mesh.draw();
-        }
-    }
+    void geometry_pass();
 
-    void geometry_pass(const glm::mat4 &light_vp, const glm::mat4 &camera_vp)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, geometry_pass_data.framebuffer);
-        glViewport(0, 0, geometry_pass_data.size, geometry_pass_data.size);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    void ssr_pass();
 
-        glBindTexture_(GL_TEXTURE_2D, 0, shadow_pass_data.shadow_map);
-        shader_geometry_pass.set_uniform({
-                {"u_camera_vp", MAT4, {._mat4 = camera_vp}},
-                {"u_shadow_map", INT, {._int = 0}},
-                {"u_light_dir", VEC3, {._vec3 = light.target - light.pos}},
-                {"u_light_color", VEC3, {._vec3 = light.color}},
-                {"u_light_vp", MAT4, {._mat4 = light_vp}},
-        });
+    void color_pass();
 
-        for (auto &m: scene)
-        {
-            if (m.tex_diffuse.has)
-                glBindTexture_(GL_TEXTURE_2D, 1, m.tex_diffuse.id);
-            shader_geometry_pass.set_uniform({
-                    {"u_model", MAT4, {._mat4 = m.model_matrix()}},
-                    {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
-                    {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
-                    {"u_tex_diffuse", INT, {._int = 1}},
-            });
-            m.mesh.draw();
-        }
-    }
-
-    void color_pass(const glm::mat4 &camera_vp)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport_({.width  = window.width,
-                     .height = window.width,
-                     .x_cnt  = 6,
-                     .y_cnt  = 4,
-                     .x_idx  = 0,
-                     .y_idx  = 0,
-                     .x_len  = 4,
-                     .y_len  = 4});
-
-        glBindTexture_(GL_TEXTURE_2D, 0, geometry_pass_data.tex_depth_visibility);
-        glBindTexture_(GL_TEXTURE_2D, 1, geometry_pass_data.tex_position);
-        glBindTexture_(GL_TEXTURE_2D, 2, geometry_pass_data.tex_normal);
-        glBindTexture_(GL_TEXTURE_2D, 3, geometry_pass_data.tex_direct_color);
-        shader_color_pass.set_uniform({
-                {"u_camera_vp", MAT4, {._mat4 = camera_vp}},
-                {"u_camera_vp_", MAT4, {._mat4 = camera_vp}},
-                {"u_camera_pos", VEC3, {._vec3 = camera.get_pos()}},
-                {"u_tex_size", VEC3, {._vec3 = {geometry_pass_data.size, geometry_pass_data.size, 0.f}}},
-                {"u_tex_world_pos", INT, {._int = 1}},
-                {"u_tex_world_normal", INT, {._int = 2}},
-                {"u_tex_direct_color", INT, {._int = 3}},
-        });
-
-        for (auto &m: scene)
-        {
-            if (m.tex_diffuse.has)
-                glBindTexture_(GL_TEXTURE_2D, 4, m.tex_diffuse.id);
-            shader_color_pass.set_uniform({
-                    {"u_model", MAT4, {._mat4 = m.model_matrix()}},
-                    {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
-                    {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
-                    {"u_tex_diffuse", INT, {._int = 4}},
-            });
-            m.mesh.draw();
-        }
-
-        /// 光源可视化
-        {
-            shader_diffuse.set_uniform({
-                    {shader_diffuse.m_proj, {._mat4 = Camera::proj_matrix()}},
-                    {shader_diffuse.m_view, {._mat4 = camera.view_matrix()}},
-            });
-            glm::vec3 scale = {0.2f, 0.2f, 0.2f};
-            glm::mat4 m1    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.pos), scale);
-            glm::mat4 m2    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.target), scale);
-
-            auto draw = [&](const glm::mat4 &mat) {
-                shader_diffuse.set_uniform({
-                        {shader_diffuse.has_diffuse, {._int = 0}},
-                        {shader_diffuse.kd, {._vec3 = {0.9f, 0.9f, 0.9f}}},
-                        {shader_diffuse.m_model, {._mat4 = mat}},
-                });
-                model_cube.mesh.draw();
-            };
-            draw(m1);
-            draw(m2);
-        }
-
-        /// 参考轴
-        {
-            axis.draw(camera_vp);
-        }
-    }
-
-    void debug_pass()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        ViewPortInfo viewport_info = {
-                .width  = window.width,
-                .height = window.height,
-                .x_cnt  = 6,
-                .y_cnt  = 4,
-                .x_len  = 1,
-                .y_len  = 1,
-        };
-
-        auto draw = [&](int x_idx, int y_idx, GLuint tex, int channel) {
-            viewport_info.x_idx = x_idx;
-            viewport_info.y_idx = y_idx;
-            glViewport_(viewport_info);
-            shader_tex_visual.draw(model_square, tex, channel);
-        };
-
-        /// shadow pass - shadow map
-        draw(4, 3, shadow_pass_data.shadow_map, 1);
-
-        /// geometry pass - position
-        draw(4, 2, geometry_pass_data.tex_position, 0);
-
-        /// geometry pass - normal
-        draw(5, 2, geometry_pass_data.tex_normal, 0);
-
-        /// geometry pass - depth
-        draw(4, 1, geometry_pass_data.tex_depth_visibility, 1);
-
-        /// geometry pass - direct color
-        draw(5, 1, geometry_pass_data.tex_direct_color, 0);
-
-        /// geometry pass - visibility
-        draw(4, 0, geometry_pass_data.tex_depth_visibility, 2);
-    }
-
+    void debug_pass();
 
     void tick_gui() override
     {
@@ -277,66 +166,169 @@ public:
 
 int main()
 {
-    auto a = SSR();
-    a.engine_main();
+    try
+    {
+        auto a = SSR();
+        a.engine_main();
+    } catch (std::exception &e)
+    {
+        SPDLOG_ERROR("exception.");
+        exit(0);
+    }
 }
 
 
 /// ==================================================================
 
 
-void SSR::shadow_pass_init()
+void SSR::debug_pass()
 {
-    glGenFramebuffers(1, &shadow_pass_data.framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, shadow_pass_data.framebuffer);
-
-    GLuint depth_buffer = create_depth_buffer(shadow_pass_data.size, shadow_pass_data.size);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
-
-    shadow_pass_data.shadow_map = new_tex2d({
-            .width           = shadow_pass_data.size,
-            .height          = shadow_pass_data.size,
-            .internal_format = GL_R32F,
-            .external_format = GL_RED,
-            .external_type   = GL_FLOAT,
-    });
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadow_pass_data.shadow_map, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        SPDLOG_ERROR("shadow pass framebuffer incomplete.");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    ViewPortInfo viewport_info = {
+            .width  = window.width,
+            .height = window.height,
+            .x_cnt  = 6,
+            .y_cnt  = 4,
+            .x_len  = 1,
+            .y_len  = 1,
+    };
+
+    auto draw = [&](int x_idx, int y_idx, GLuint tex, int channel) {
+        viewport_info.x_idx = x_idx;
+        viewport_info.y_idx = y_idx;
+        glViewport_(viewport_info);
+        shader_tex_visual.draw(model_square, tex, channel);
+    };
+
+    /// light pass
+    draw(0, 0, light_pass_cfg.shadow_map, 1);
+
+    /// geometry pass
+    draw(0, 1, geometry_pass_data.tex_pos_view, 0);
+    draw(1, 1, geometry_pass_data.tex_normal_view, 0);
+    draw(0, 2, geometry_pass_data.tex_diffuse, 0);
+
+    /// ssr pass
+    draw(0, 3, ssr_pass_data.tex_ssr_uv, 0);
 }
 
 
-void SSR::geometry_pass_init()
+void SSR::ssr_pass()
 {
-    glGenFramebuffers(1, &geometry_pass_data.framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, geometry_pass_data.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssr_pass_data.framebuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, ssr_pass_data.size, ssr_pass_data.size);
 
-    GLuint depth_buffer = create_depth_buffer(geometry_pass_data.size, geometry_pass_data.size);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+    glBindTexture_(GL_TEXTURE_2D, 0, geometry_pass_data.tex_pos_view);
+    glBindTexture_(GL_TEXTURE_2D, 1, geometry_pass_data.tex_normal_view);
 
-    auto tex2d_info = Tex2DInfo{
-            .width           = geometry_pass_data.size,
-            .height          = geometry_pass_data.size,
-            .internal_format = GL_RGBA32F,
-            .external_format = GL_RGBA,
-            .external_type   = GL_FLOAT,
-    };
-    geometry_pass_data.tex_position         = new_tex2d(tex2d_info);
-    geometry_pass_data.tex_normal           = new_tex2d(tex2d_info);
-    geometry_pass_data.tex_depth_visibility = new_tex2d(tex2d_info);
-    geometry_pass_data.tex_direct_color     = new_tex2d(tex2d_info);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, geometry_pass_data.tex_position, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, geometry_pass_data.tex_normal, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, geometry_pass_data.tex_depth_visibility, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, geometry_pass_data.tex_direct_color, 0);
+    ssr_pass_data.shader.set_uniform({
+            {"u_tex_pos_view", INT, {._int = 0}},
+            {"u_tex_normal_view", INT, {._int = 1}},
+            {"u_tex_size", VEC3, {._vec3 = {ssr_pass_data.size, ssr_pass_data.size, 0.f}}},
+            {"u_camera_proj", MAT4, {._mat4 = Camera::proj_matrix()}},
+    });
+    model_square.mesh.draw();
+}
 
-    /// multi render target
-    GLenum layout_frag_out[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
-    glDrawBuffers(4, layout_frag_out);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        SPDLOG_ERROR("geometry pass framebuffer incomplete.");
+void SSR::color_pass()
+{
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport_({.width  = window.width,
+                 .height = window.height,
+                 .x_cnt  = 6,
+                 .y_cnt  = 4,
+                 .x_idx  = 2,
+                 .y_idx  = 0,
+                 .x_len  = 4,
+                 .y_len  = 4});
+
+    /// 绘制场景
+    glm::mat3 view_it = glm::transpose(glm::inverse(glm::mat3(camera.view_matrix())));
+    glBindTexture_(GL_TEXTURE_2D, 0, geometry_pass_data.tex_pos_view);
+    glBindTexture_(GL_TEXTURE_2D, 1, geometry_pass_data.tex_normal_view);
+    glBindTexture_(GL_TEXTURE_2D, 2, geometry_pass_data.tex_diffuse);
+    glBindTexture_(GL_TEXTURE_2D, 3, light_pass_cfg.shadow_map);
+    glBindTexture_(GL_TEXTURE_2D, 4, ssr_pass_data.tex_ssr_uv);
+    shader.set_uniform({
+            {"u_tex_pos_view", INT, {._int = 0}},
+            {"u_tex_normal_view", INT, {._int = 1}},
+            {"u_tex_diffuse", INT, {._int = 2}},
+            {"u_tex_ssr_uv", INT, {._int = 4}},
+            {"u_light_dir_view", VEC3, {._vec3 = view_it * light.light_dir()}},
+            {"u_light_color", VEC3, {._vec3 = light.color}},
+    });
+    model_square.mesh.draw();
+
+    /// 光源可视化
+    {
+        shader_diffuse.set_uniform({
+                {shader_diffuse.m_proj, {._mat4 = Camera::proj_matrix()}},
+                {shader_diffuse.m_view, {._mat4 = camera.view_matrix()}},
+        });
+        glm::vec3 scale = {0.2f, 0.2f, 0.2f};
+        glm::mat4 m1    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.pos), scale);
+        glm::mat4 m2    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.target), scale);
+
+        auto draw = [&](const glm::mat4 &mat) {
+            shader_diffuse.set_uniform({
+                    {shader_diffuse.has_diffuse, {._int = 0}},
+                    {shader_diffuse.kd, {._vec3 = {0.9f, 0.9f, 0.9f}}},
+                    {shader_diffuse.m_model, {._mat4 = mat}},
+            });
+            model_cube.mesh.draw();
+        };
+        draw(m1);
+        draw(m2);
+    }
+
+    /// 参考轴
+    {
+        axis.draw(Camera::proj_matrix() * camera.view_matrix());
+    }
+}
+
+
+void SSR::geometry_pass()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, geometry_pass_data.framebuffer);
+    glViewport(0, 0, geometry_pass_data.size, geometry_pass_data.size);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    geometry_pass_data.shader.set_uniform({
+            {"u_view", MAT4, {._mat4 = camera.view_matrix()}},
+            {"u_proj", MAT4, {._mat4 = Camera::proj_matrix()}},
+    });
+
+    for (auto &m: scene)
+    {
+        if (m.tex_diffuse.has)
+            glBindTexture_(GL_TEXTURE_2D, 0, m.tex_diffuse.id);
+        geometry_pass_data.shader.set_uniform({
+                {"u_model", MAT4, {._mat4 = m.model_matrix()}},
+                {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
+                {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
+                {"u_tex_diffuse", INT, {._int = 0}},
+        });
+        m.mesh.draw();
+    }
+}
+
+
+void SSR::light_pass()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, light_pass_cfg.framebuffer);
+    glViewport(0, 0, light_pass_cfg.size, light_pass_cfg.size);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    for (auto &m: scene)
+    {
+        light_pass_cfg.shader.set_uniform({
+                {"u_light_mvp", MAT4, {._mat4 = light.proj_matrix * light.view_matrix_get() * m.model_matrix()}},
+        });
+        m.mesh.draw();
+    }
 }

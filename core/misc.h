@@ -94,3 +94,34 @@ inline void combine(std::vector<T> &a, std::vector<T> &b)
 {
     a.insert(a.end(), b.begin(), b.end());
 }
+
+
+/// 为 framebuffer 绑定 depth 和 color 附件
+inline void framebuffer_bind(GLuint framebuffer, GLuint depth_buffer, const std::vector<GLuint> &color_attachment_list)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    /// depth attachment
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+
+    /// color attachments
+    size_t              color_attachment_cnt = color_attachment_list.size();
+    std::vector<GLenum> frag_out_layout;
+    for (size_t i = 0; i < color_attachment_cnt; ++i)
+    {
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, color_attachment_list[i], 0);
+        frag_out_layout.push_back(GL_COLOR_ATTACHMENT0 + i);
+    }
+
+    /// 是否使用多目标渲染
+    if (color_attachment_cnt > 1)
+    {
+        glDrawBuffers(static_cast<int>(color_attachment_cnt), frag_out_layout.data());
+    }
+
+    /// check
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        SPDLOG_ERROR("geometry pass framebuffer incomplete.");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}

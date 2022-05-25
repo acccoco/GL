@@ -5,20 +5,23 @@ layout (location = 1) in vec3 in_normal;
 layout (location = 2) in vec2 in_uv;
 
 uniform mat4 u_model;
-uniform mat4 u_camera_vp;
+uniform mat4 u_view;
+uniform mat4 u_proj;
 
 out VS_FS {
-    vec3 world_pos;
-    vec3 world_normal;
+    vec3 pos_view;
+    vec3 normal_view;
     vec2 uv;
 } vs_fs;
 
 
 void main()
 {
-    gl_Position = u_camera_vp * u_model * vec4(in_pos, 1.0);
+    vec4 pos = vec4(in_pos, 1.0);
+    pos = u_view * u_model * pos;
+    vs_fs.pos_view = pos.xyz / pos.w;
 
-    vs_fs.world_pos = (u_model * vec4(in_pos, 1.0)).xyz;
-    vs_fs.world_normal = transpose(inverse(mat3(u_model))) * in_normal;
+    gl_Position = u_proj * pos;
+    vs_fs.normal_view  = transpose(inverse(mat3(u_view * u_model))) * in_normal;
     vs_fs.uv = in_uv;
 }
