@@ -11,7 +11,7 @@ AlignConsecutiveDeclarations: Consecutive
 
 AlignOperands: Align
 AllowAllArgumentsOnNextLine: false
-PackConstructorInitializers: Never
+PackConstructorInitializers: NextLine
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true

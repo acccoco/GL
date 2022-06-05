@@ -6,3 +6,5 @@ cmake-build-debug
 .vscode
 build
 examples/*/shader
+config.hpp
+frame-config.hpp
