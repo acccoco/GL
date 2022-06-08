@@ -1,7 +1,6 @@
 #pragma once
 
-#include <iostream>
-
+#include <cstdio>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
@@ -10,9 +9,16 @@
 #include <imgui_impl_opengl3.h>
 
 
+inline void glfw_error_callback(int error, const char *str)
+{
+    std::fprintf(stderr, "glfw error(%d): %s\n", error, str);
+}
+
+
 inline void glfw_init()
 {
     // init glfw
+    glfwSetErrorCallback(glfw_error_callback);
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -38,13 +44,13 @@ inline void spdlog_init()
      * 格式控制：
      * %-4!<flag> 表示左对齐，4位，超出截断
      */
-    spdlog::set_pattern("[%H:%M:%S][%^%L%$][%10!s:%-3!#] %v");
+    spdlog::set_pattern(/*"[%H:%M:%S]"*/ "[%^%L%$][%10!s:%-3!#] %v");
 }
 
 inline void glad_init()
 {
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
-        std::cout << "fail to environment_init glad." << std::endl;
+        std::fprintf(stderr, "fail to environment_init glad.");
 }
 
 inline void imgui_init(GLFWwindow *window)

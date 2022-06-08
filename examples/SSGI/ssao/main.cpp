@@ -21,7 +21,8 @@ public:
     UniformAttribute m_proj  = {"m_proj", this, UniAttrType::MAT4};
 
     ShaderGeometry()
-        : Shader(EXAMPLE_CUR_PATH + "shader/geometry.vert", EXAMPLE_CUR_PATH + "shader/geometry.frag")
+        : Shader(EXAMPLE_CUR_PATH + "shader/geometry.vert",
+                 EXAMPLE_CUR_PATH + "shader/geometry.frag")
     {
         this->uniform_attrs_location_init();
     }
@@ -84,17 +85,18 @@ class SSAO : public Engine
 
         /// framebuffer: depth attachment
         depth_buffer = create_depth_buffer(framebuffer_size, framebuffer_size);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                                  depth_buffer);
 
         /// framebuffer: color attachment
-        tex_geometry = new_tex2d({
+        tex_geometry = new_tex2d(Tex2DInfo{
                 .width           = framebuffer_size,
                 .height          = framebuffer_size,
                 .internal_format = GL_RGBA32F,
                 .external_format = GL_RGBA,
                 .external_type   = GL_FLOAT,
-                .wrap            = GL_REPEAT,
-                .filter          = GL_LINEAR,
+                .wrap_s          = GL_REPEAT,
+                .wrap_t          = GL_REPEAT,
         });
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_geometry, 0);
     }
@@ -172,8 +174,10 @@ class SSAO : public Engine
     void tick_gui() override
     {
         ImGui::Begin("setting");
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
         ImGui::SliderFloat("ssao radius", &ssao_radius, 0.f, 2.f);
         ImGui::Checkbox("ssao on", &ssao_on);
         ImGui::Checkbox("ssao only", &ssao_only);

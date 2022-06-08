@@ -35,7 +35,8 @@ struct ThisFrameBuffer {
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
         depth_buffer = create_depth_buffer(WIDTH, HEIGHT);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                                  depth_buffer);
 
         tex_color = new_tex2d({
                 .width           = WIDTH,
@@ -96,8 +97,10 @@ class EngineTest : public Engine
     void tick_gui() override
     {
         ImGui::Begin("setting");
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
         ImGui::End();
     }
 };

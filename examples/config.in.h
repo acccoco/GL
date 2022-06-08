@@ -6,6 +6,7 @@
 
 
 const std::string TEXTURE          = "${RT_TEXTURE_DIR}/";
+const std::string MODEL            = "${RT_MODEL_DIR}/";
 const std::string EXAMPLE_CUR_PATH = "${EXAMPLE_CUR_PATH}/";
 
 

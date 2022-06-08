@@ -1,5 +1,6 @@
 #include "./shader.h"
 #include <spdlog/spdlog.h>
+#include "misc.h"
 
 
 UniformAttribute::UniformAttribute(std::string name_, Shader *shader, UniAttrType type)
@@ -41,6 +42,7 @@ GLuint shader_compile(const std::string &file_path, GLenum shader_type)
         throw(std::exception());
     }
 
+    CHECK_GL_ERROR();
     return shader_id;
 }
 
@@ -59,7 +61,8 @@ void Shader::set_uniform(const std::vector<UniAttrAssign> &uni_attr_assign_list)
     this->use();
     for (auto &assign: uni_attr_assign_list)
     {
-        uni_attr_func_list[static_cast<int>(assign.attr.uni_type)](assign.attr.location, assign.value_ptr);
+        uni_attr_func_list[static_cast<int>(assign.attr.uni_type)](assign.attr.location,
+                                                                   assign.value_ptr);
     }
 }
 
@@ -82,6 +85,7 @@ GLuint shader_link(GLuint vertex, GLuint fragment, GLuint geometry)
         SPDLOG_ERROR("shader link error, info: {}", info);
         throw(std::exception());
     }
+    CHECK_GL_ERROR();
     return program_id;
 }
 
@@ -101,5 +105,8 @@ void UniAttrFuncList::init_uni_attr_func_list()
     };
     uni_attr_func_list[UniAttrType::VEC3] = [](GLint location, UniAttrValue value) {
         glUniform3fv(location, 1, glm::value_ptr(value._vec3));
+    };
+    uni_attr_func_list[UniAttrType::VEC4] = [](GLint location, UniAttrValue value) {
+        glUniform4fv(location, 1, glm::value_ptr(value._vec4));
     };
 }

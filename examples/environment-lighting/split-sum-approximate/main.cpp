@@ -56,8 +56,6 @@ struct SplitSumApproximate {
                 .internal_format = GL_RG32F,
                 .external_format = GL_RG,
                 .external_type   = GL_FLOAT,
-                .wrap            = GL_CLAMP_TO_EDGE,
-                .filter          = GL_LINEAR,
         });
     }
 

@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "misc.h"
 
 /// 创建一个 VAO 对象
 static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int> &indices = {});
@@ -82,6 +83,8 @@ static GLuint vao(const std::vector<float> &data, const std::vector<unsigned int
     // unbind
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    CHECK_GL_ERROR();
 
     return VAO;
 }

@@ -3,6 +3,46 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <spdlog/spdlog.h>
+
+
+/// 使用 spdlog 打印错误日志，并且抛出异常
+#define LOG_AND_THROW(str, args...)                                                                \
+    do                                                                                             \
+    {                                                                                              \
+        SPDLOG_ERROR(str, ##args);                                                                 \
+        throw std::exception();                                                                    \
+    } while (false)
+
+
+/// OpenGL 错误检查
+inline void check_gl_error(const char *file, int line)
+{
+    GLenum error_code;
+    /// 可能会设置多个 error flags，因此需要循环调用，直到返回 GL_NO_ERROR。每调用一次就清除一个 error flag
+    while ((error_code = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error_str;
+
+#define LOCAL_ERROR_BRANCH(err)                                                                    \
+    case err: error_str = #err; break;
+
+        switch (error_code)
+        {
+            LOCAL_ERROR_BRANCH(GL_INVALID_ENUM)
+            LOCAL_ERROR_BRANCH(GL_INVALID_VALUE)
+            LOCAL_ERROR_BRANCH(GL_INVALID_OPERATION)
+            LOCAL_ERROR_BRANCH(GL_INVALID_FRAMEBUFFER_OPERATION)
+            LOCAL_ERROR_BRANCH(GL_OUT_OF_MEMORY)
+            default: error_str = "unknow error code: " + std::to_string(error_code);
+        }
+
+#undef GL_ERROR_BRANCH
+
+        spdlog::error("[{}:{}]OpenGL error: {}", file, line, error_str);
+    }
+}
+#define CHECK_GL_ERROR() check_gl_error(__FILE_NAME__, __LINE__)
 
 
 const glm::vec3 POSITIVE_X = {1, 0, 0};
@@ -29,7 +69,10 @@ struct CameraDirDrawCube {
 };
 
 
-inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height) { glViewport(x, y, width, height); }
+inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+    glViewport(x, y, width, height);
+}
 
 /**
  * 设置屏幕上的显示区域
@@ -42,8 +85,8 @@ inline void glViewport_(GLint x, GLint y, GLsizei width, GLsizei height) { glVie
  * @param xlen 占据几个格子宽
  * @param ylen 占据几个格子高
  */
-inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, GLint xidx, GLint yidx, GLint xlen = 1,
-                        GLint ylen = 1)
+inline void glViewport_(GLsizei width, GLsizei height, GLint xcnt, GLint ycnt, GLint xidx,
+                        GLint yidx, GLint xlen = 1, GLint ylen = 1)
 {
     auto x_delta  = width / xcnt;
     auto y_delta  = height / ycnt;
@@ -97,7 +140,8 @@ inline void combine(std::vector<T> &a, std::vector<T> &b)
 
 
 /// 为 framebuffer 绑定 depth 和 color 附件
-inline void framebuffer_bind(GLuint framebuffer, GLuint depth_buffer, const std::vector<GLuint> &color_attachment_list)
+inline void framebuffer_bind(GLuint framebuffer, GLuint depth_buffer,
+                             const std::vector<GLuint> &color_attachment_list)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
@@ -124,4 +168,14 @@ inline void framebuffer_bind(GLuint framebuffer, GLuint depth_buffer, const std:
         SPDLOG_ERROR("geometry pass framebuffer incomplete.");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+template<typename T>
+inline bool is_one_of(T a, const std::vector<T> &list)
+{
+    for (const T &b: list)
+        if (a == b)
+            return true;
+    return false;
 }

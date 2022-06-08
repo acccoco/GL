@@ -26,6 +26,7 @@ enum UniAttrType {
     MAT4,
     MAT3,
     VEC3,
+    VEC4,
     /// 确保这个变量在最后一个位置，表示类型的总数
     _total_
 };
@@ -37,6 +38,7 @@ union UniAttrValue {
     glm::mat4 _mat4;
     glm::mat3 _mat3;
     glm::vec3 _vec3;
+    glm::vec4 _vec4;
 };
 
 

@@ -18,8 +18,7 @@ public:
     UniformAttribute kd{"kd", this, UniAttrType::VEC3};
 
 
-    ShaderDiffuse()
-        : Shader(SHADER + "diffuse/diffuse.vert", SHADER + "diffuse/diffuse.frag")
+    ShaderDiffuse() : Shader(SHADER + "diffuse/diffuse.vert", SHADER + "diffuse/diffuse.frag")
     {
         uniform_attrs_location_init();
     }
@@ -46,10 +45,10 @@ public:
             glBindTexture(GL_TEXTURE_2D, model.tex_diffuse.id);
         }
         this->set_uniform({
-                {m_model, {._mat4 = model.model_matrix()}},
-                {kd, {._vec3 = model.color_diffuse}},
+                {    m_model, {._mat4 = model.model_matrix()}},
+                {         kd,  {._vec3 = model.color_diffuse}},
                 {has_diffuse, {._int = model.tex_diffuse.has}},
-                {tex_diffuse, {._int = 0}},
+                {tex_diffuse,                     {._int = 0}},
         });
         model.mesh.draw();
     }

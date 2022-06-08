@@ -171,7 +171,7 @@ void main()
     ray_dir = normalize(ray_dir);
 
     /// 计算光线和场景的交点
-    /// todo：简单假设，如果距离大于 100，就视为没有相交
+    /// FIXME：简单假设，如果距离大于 100，就视为没有相交
     SDF_RES sdf_res = ray_march(camera_pos, ray_dir);
     if (sdf_res.dis > 100.0) {
         FragColor = vec4(0.0, 0.0, 0.0, 1.0);

@@ -33,7 +33,7 @@ public:
         /// 与 glfw 相关的操作，提供的尺寸是真实尺寸（frambuffer）的一半
         window.ptr = glfwCreateWindow(window.width / 2, window.height / 2, "RTR", nullptr, nullptr);
         if (!window.ptr)
-            std::cout << "fail to create window." << std::endl;
+            SPDLOG_ERROR("fail to create window.");
         glfwMakeContextCurrent(window.ptr);
 
         glad_init();

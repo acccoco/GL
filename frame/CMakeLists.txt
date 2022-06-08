@@ -39,7 +39,10 @@ set(LIB_LINKS
         ${IOKIT_LIBRARY})
 
 
-add_library(frame STATIC core/shader.cpp)
+add_library(frame STATIC
+        core/shader.cpp
+        core/texture.cpp
+        core/import-gltf.cpp)
 target_compile_definitions(frame PRIVATE FRAME)
 
 

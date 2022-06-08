@@ -45,7 +45,7 @@ struct DepthFramebuffer {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadow_map, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            std::cout << "frame buffer uncomplete." << std::endl;
+            SPDLOG_ERROR("frame buffer uncomplete.");
     }
 };
 
