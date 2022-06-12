@@ -9,8 +9,8 @@
 #include "core/engine.h"
 #include "core/mesh.h"
 #include "core/misc.h"
-#include "core/model.h"
-#include "core/shader2.h"
+#include "core/shader.h"
+#include "core/import-obj.h"
 
 
 const std::string CUR_SHADER = EXAMPLE_CUR_PATH + "shader/";
@@ -18,11 +18,11 @@ const std::string CUR_SHADER = EXAMPLE_CUR_PATH + "shader/";
 
 class TestEngine : public Engine
 {
-    Shader2            shader{CUR_SHADER + "npr.vert", CUR_SHADER + "npr.frag"};
-    glm::vec3          light_pos{-3, 4, 4};
-    std::vector<Model> model_diona = Model::load_obj(MODEL_DIONA);
-    std::vector<Model> scene;
-    float              outline_threshold = 0.2f;
+    Shader2               shader{CUR_SHADER + "npr.vert", CUR_SHADER + "npr.frag"};
+    glm::vec3             light_pos{-3, 4, 4};
+    std::vector<RTObject> model_diona = ImportObj::load_obj(MODEL_DIONA);
+    std::vector<RTObject> scene;
+    float                 outline_threshold = 0.2f;
 
     void init() override
     {
@@ -36,26 +36,26 @@ class TestEngine : public Engine
 
         shader.set_uniform({
                 {"m_view", camera.view_matrix()},
-                {"m_proj", Camera::proj_matrix()},
+                {"m_proj", camera.proj_matrix()},
                 {"camera_pos", camera.get_pos()},
                 {"light_pos", light_pos},
                 {"light_indensity", 2.f},
                 {"outline_threshold", outline_threshold},
         });
 
-        for (auto &m: scene)
+        for (auto &o: scene)
         {
-            if (m.tex_diffuse.has)
-                glBindTexture_(GL_TEXTURE_2D, 0, m.tex_diffuse.id);
+            if (o.mesh.mat.has_tex_basecolor())
+                glBindTexture_(GL_TEXTURE_2D, 0, o.mesh.mat.metallic_roughness.tex_base_color);
 
             shader.set_uniform({
-                    {"m_model", m.model_matrix()},
-                    {"kd", m.color_diffuse},
-                    {"ks", m.color_specular},
-                    {"has_diffuse", m.tex_diffuse.has},
+                    {"m_model", o.matrix()},
+                    {"kd", glm::vec3(o.mesh.mat.metallic_roughness.base_color)},
+                    {"ks", glm::vec3(0.5f)},
+                    {"has_diffuse", o.mesh.mat.has_tex_basecolor()},
                     {"tex_diffuse", 0},
             });
-            m.mesh.draw();
+            o.mesh.draw();
         }
     }
 
@@ -63,8 +63,10 @@ class TestEngine : public Engine
     {
         ImGui::Begin("setting");
 
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
 
         ImGui::SliderFloat("light pos x", &light_pos.x, -10.f, 10.f);
         ImGui::SliderFloat("light pos y", &light_pos.y, -10.f, 10.f);

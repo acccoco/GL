@@ -13,7 +13,6 @@
 #include "config.hpp"
 #include "core/engine.h"
 #include "core/mesh.h"
-#include "core/model.h"
 
 
 #include "shader/diffuse/diffuse.h"
@@ -25,7 +24,7 @@ class TestEngine : public Engine
     ShaderBlinnPhong shader_phong;
 
     // model
-    std::vector<Model> models;
+    std::vector<RTObject> models;
 
     // light
     glm::vec3 light_pos{-3, 4, 4};
@@ -35,12 +34,12 @@ class TestEngine : public Engine
         // load model
         for (auto &path: model_path_list)
         {
-            auto model = Model::load_obj(path);
+            auto model = ImportObj::load_obj(path);
             models.insert(models.end(), model.begin(), model.end());
         }
 
         // init shader
-        shader_phong.init(Camera::proj_matrix());
+        shader_phong.init(camera.proj_matrix());
 
         // init others
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
@@ -59,8 +58,10 @@ class TestEngine : public Engine
     void tick_gui() override
     {
         ImGui::Begin("setting");
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
         ImGui::SliderFloat("light pos x", &light_pos.x, -10.f, 10.f);
         ImGui::SliderFloat("light pos y", &light_pos.y, -10.f, 10.f);
         ImGui::SliderFloat("light pos z", &light_pos.z, -10.f, 10.f);

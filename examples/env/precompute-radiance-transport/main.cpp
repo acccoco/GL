@@ -15,11 +15,7 @@
 #include "config.hpp"
 #include "core/engine.h"
 #include "core/mesh.h"
-#include "core/model.h"
 #include "shader/skybox/skybox.h"
-
-#include "./shader.h"
-
 
 
 /// sh 只需要前 3 阶，也就是 9 个函数
@@ -55,7 +51,8 @@ class EngineTest : public Engine
     GLsizei            vertex_cnt{};
 
     /// shader
-    ShaderPRT     shader_ptr;
+    Shader2       shader_ptr = {EXAMPLE_CUR_PATH + "shader/prt.vert",
+                                EXAMPLE_CUR_PATH + "shader/prt.frag"};
     CubeMapVisual cube_visual;
 
     /**
@@ -102,13 +99,13 @@ class EngineTest : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         /// draw skybox
-        cube_visual.draw_as_skybox(camera.view_matrix(), Camera::proj_matrix(), cubemap_indoor);
+        cube_visual.draw_as_skybox(camera.view_matrix(), camera.proj_matrix(), cubemap_indoor);
 
         /// draw bunny
         shader_ptr.set_uniform({
-                {shader_ptr.m_proj, {._mat4 = Camera::proj_matrix()}},
-                {shader_ptr.m_view, {._mat4 = camera.view_matrix()}},
-                {shader_ptr.m_model, {._mat4 = glm::one<glm::mat4>()}},
+                {"m_proj", camera.proj_matrix()},
+                {"m_view", camera.view_matrix()},
+                {"m_model", glm::one<glm::mat4>()},
         });
         switch (transport_switcher)
         {
@@ -123,8 +120,10 @@ class EngineTest : public Engine
     void tick_gui() override
     {
         ImGui::Begin("setting");
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
         ImGui::SliderInt("scene switcher", &transport_switcher, 1, 3);
         ImGui::Text("1 = unshadowed");
         ImGui::Text("2 = inter reflect");
@@ -139,12 +138,18 @@ int main()
     engine.engine_main();
 }
 
+glm::mat3 array2mat(const std::array<float, 9> &a)
+{
+    return glm::mat3{a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]};
+}
+
 void EngineTest::set_SH_light()
 {
-    shader_ptr.use();
-    glUniformMatrix3fv(shader_ptr.SH_light_R.location, 1, GL_FALSE, &light_SH_coeff[0][0]);
-    glUniformMatrix3fv(shader_ptr.SH_light_G.location, 1, GL_FALSE, &light_SH_coeff[1][0]);
-    glUniformMatrix3fv(shader_ptr.SH_light_B.location, 1, GL_FALSE, &light_SH_coeff[2][0]);
+    shader_ptr.set_uniform({
+            {"SH_light_R", array2mat(light_SH_coeff[0])},
+            {"SH_light_G", array2mat(light_SH_coeff[1])},
+            {"SH_light_B", array2mat(light_SH_coeff[2])},
+    });
 }
 
 GLuint EngineTest::init_model(const std::vector<float> &SH, const std::string &obj_file_path)
@@ -172,7 +177,8 @@ GLuint EngineTest::init_model(const std::vector<float> &SH, const std::string &o
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, PNTSH * vertex_cnt * sizeof(float), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, vertex_cnt * sizeof(float) * PNT, &obj_data.vertices[0]);
-    glBufferSubData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * PNT, vertex_cnt * sizeof(float) * SH_MAX_CNT, &SH[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, vertex_cnt * sizeof(float) * PNT,
+                    vertex_cnt * sizeof(float) * SH_MAX_CNT, &SH[0]);
 
     /**
      * 注意：每个顶点属性的最大尺寸是 4，因此 9 个 SH 参数需要分三次传入
@@ -180,9 +186,11 @@ GLuint EngineTest::init_model(const std::vector<float> &SH, const std::string &o
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, POS, GL_FLOAT, GL_FALSE, PNT * sizeof(float), nullptr);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, NORMAL, GL_FLOAT, GL_FALSE, PNT * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribPointer(1, NORMAL, GL_FLOAT, GL_FALSE, PNT * sizeof(float),
+                          (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, TEX, GL_FLOAT, GL_FALSE, PNT * sizeof(float), (void *) (6 * sizeof(float)));
+    glVertexAttribPointer(2, TEX, GL_FLOAT, GL_FALSE, PNT * sizeof(float),
+                          (void *) (6 * sizeof(float)));
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, SH_MAX_CNT * sizeof(float),
                           (void *) (vertex_cnt * 8 * sizeof(float)));
@@ -196,7 +204,8 @@ GLuint EngineTest::init_model(const std::vector<float> &SH, const std::string &o
     GLuint EBO;
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, face_cnt * 3 * sizeof(unsigned int), &obj_data.faces[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, face_cnt * 3 * sizeof(unsigned int), &obj_data.faces[0],
+                 GL_STATIC_DRAW);
 
     /// unbind
     glBindVertexArray(0);

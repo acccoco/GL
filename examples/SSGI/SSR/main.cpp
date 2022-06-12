@@ -8,10 +8,9 @@
 
 #include "config.hpp"
 #include "core/engine.h"
-#include "core/model.h"
 #include "core/light.h"
 #include "core/misc.h"
-#include "core/shader2.h"
+#include "core/shader.h"
 #include "shader/tex2d-visual/tex-visual.h"
 #include "shader/diffuse/diffuse.h"
 #include "functions/axis.h"
@@ -30,7 +29,7 @@ class SSR : public Engine
         const GLsizei size = 512;
 
         GLuint framebuffer{};
-        GLuint shadow_map   = new_tex2d({.width = size, .height = size, .internal_format = GL_R32F});
+        GLuint shadow_map = new_tex2d({.width = size, .height = size, .internal_format = GL_R32F});
         GLuint depth_buffer = create_depth_buffer(size, size);
 
         Shader2 shader = Shader2(CUR_SHADER + "light-pass.vert", CUR_SHADER + "light-pass.frag");
@@ -50,18 +49,23 @@ class SSR : public Engine
         GLuint depth_buffer = create_depth_buffer(size, size);
 
         /// view-space 下的坐标
-        GLuint tex_pos_view = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        GLuint tex_pos_view =
+                new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
         /// view-space 下的法线
-        GLuint tex_normal_view = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        GLuint tex_normal_view =
+                new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
         /// 材质信息：diffuse albedo
-        GLuint tex_diffuse = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        GLuint tex_diffuse =
+                new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
 
-        Shader2 shader = Shader2(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag");
+        Shader2 shader =
+                Shader2(CUR_SHADER + "geometry-pass.vert", CUR_SHADER + "geometry-pass.frag");
 
         GeometryPassData()
         {
             glGenFramebuffers(1, &framebuffer);
-            framebuffer_bind(framebuffer, depth_buffer, {tex_pos_view, tex_normal_view, tex_diffuse});
+            framebuffer_bind(framebuffer, depth_buffer,
+                             {tex_pos_view, tex_normal_view, tex_diffuse});
         }
     } geometry_pass_data;
 
@@ -70,7 +74,8 @@ class SSR : public Engine
 
         GLuint framebuffer{};
         GLuint depth_buffer = create_depth_buffer(size, size);
-        GLuint tex_ssr_uv   = new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
+        GLuint tex_ssr_uv =
+                new_tex2d({.width = size, .height = size, .internal_format = GL_RGBA32F});
 
         Shader2 shader = Shader2(CUR_SHADER + "ssr-pass.vert", CUR_SHADER + "ssr-pass.frag");
 
@@ -90,17 +95,20 @@ class SSR : public Engine
 
         /// 这里是正交投影！！！！
         const glm::mat4         proj_matrix = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1e-2f, 100.f);
-        [[nodiscard]] glm::mat4 view_matrix_get() const { return glm::lookAt(pos, target, POSITIVE_Y); }
+        [[nodiscard]] glm::mat4 view_matrix_get() const
+        {
+            return glm::lookAt(pos, target, POSITIVE_Y);
+        }
         [[nodiscard]] glm::vec3 light_dir() const { return target - pos; }
     } light;
 
     /// 场景中的模型信息
-    std::vector<Model> scene;
-    std::vector<Model> model_three   = Model::load_obj(MODEL_THREE_OBJS);
-    std::vector<Model> model_cornell = Model::load_obj(MODEL_CORNELL_BOX);
+    std::vector<RTObject> scene;
+    std::vector<RTObject> model_three   = ImportObj::load_obj(MODEL_THREE_OBJS);
+    std::vector<RTObject> model_cornell = ImportObj::load_obj(MODEL_CORNELL_BOX);
 
-    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
-    Model model_cube   = Model::load_obj(MODEL_CUBE)[0];
+    RTObject model_square = ImportObj::load_obj(MODEL_SQUARE)[0];
+    RTObject model_cube   = ImportObj::load_obj(MODEL_CUBE)[0];
 
     Shader2 shader = Shader2(CUR_SHADER + "color-pass.vert", CUR_SHADER + "color-pass.frag");
 
@@ -117,7 +125,7 @@ class SSR : public Engine
 public:
     void init() override
     {
-        this->set_window_size(window_width, window_height);
+        Window::set_framebuffer_size(window_width, window_height);
 
         scene = model_three;
     }
@@ -147,8 +155,10 @@ public:
     {
         ImGui::Begin("setting");
 
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
 
         ImGui::SliderFloat("light pos x", &light.pos.x, -10, 10);
         ImGui::SliderFloat("light pos y", &light.pos.y, -10, 10);
@@ -185,8 +195,8 @@ void SSR::debug_pass()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     ViewPortInfo viewport_info = {
-            .width  = window.width,
-            .height = window.height,
+            .width  = Window::framebuffer_width(),
+            .height = Window::framebuffer_height(),
             .x_cnt  = 6,
             .y_cnt  = 4,
             .x_len  = 1,
@@ -226,7 +236,7 @@ void SSR::ssr_pass()
             {"u_tex_pos_view", INT, {._int = 0}},
             {"u_tex_normal_view", INT, {._int = 1}},
             {"u_tex_size", VEC3, {._vec3 = {ssr_pass_data.size, ssr_pass_data.size, 0.f}}},
-            {"u_camera_proj", MAT4, {._mat4 = Camera::proj_matrix()}},
+            {"u_camera_proj", MAT4, {._mat4 = camera.proj_matrix()}},
     });
     model_square.mesh.draw();
 }
@@ -236,8 +246,8 @@ void SSR::color_pass()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport_({.width  = window.width,
-                 .height = window.height,
+    glViewport_({.width  = Window::framebuffer_width(),
+                 .height = Window::framebuffer_height(),
                  .x_cnt  = 6,
                  .y_cnt  = 4,
                  .x_idx  = 2,
@@ -264,19 +274,17 @@ void SSR::color_pass()
 
     /// 光源可视化
     {
-        shader_diffuse.set_uniform({
-                {shader_diffuse.m_proj, {._mat4 = Camera::proj_matrix()}},
-                {shader_diffuse.m_view, {._mat4 = camera.view_matrix()}},
-        });
+        shader_diffuse.init(camera.proj_matrix());
+        shader_diffuse.update_per_fame(camera.view_matrix());
         glm::vec3 scale = {0.2f, 0.2f, 0.2f};
         glm::mat4 m1    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.pos), scale);
         glm::mat4 m2    = glm::scale(glm::translate(glm::one<glm::mat4>(), light.target), scale);
 
         auto draw = [&](const glm::mat4 &mat) {
-            shader_diffuse.set_uniform({
-                    {shader_diffuse.has_diffuse, {._int = 0}},
-                    {shader_diffuse.kd, {._vec3 = {0.9f, 0.9f, 0.9f}}},
-                    {shader_diffuse.m_model, {._mat4 = mat}},
+            shader_diffuse.shader.set_uniform({
+                    {"has_diffuse", 0},
+                    {"kd", {0.9f, 0.9f, 0.9f}},
+                    {"m_model", mat},
             });
             model_cube.mesh.draw();
         };
@@ -286,7 +294,7 @@ void SSR::color_pass()
 
     /// 参考轴
     {
-        axis.draw(Camera::proj_matrix() * camera.view_matrix());
+        axis.draw(camera.proj_matrix() * camera.view_matrix());
     }
 }
 
@@ -299,18 +307,19 @@ void SSR::geometry_pass()
 
     geometry_pass_data.shader.set_uniform({
             {"u_view", MAT4, {._mat4 = camera.view_matrix()}},
-            {"u_proj", MAT4, {._mat4 = Camera::proj_matrix()}},
+            {"u_proj", MAT4, {._mat4 = camera.proj_matrix()}},
     });
 
     for (auto &m: scene)
     {
-        if (m.tex_diffuse.has)
-            glBindTexture_(GL_TEXTURE_2D, 0, m.tex_diffuse.id);
+        const Material &mat = m.mesh.mat;
+        if (mat.has_tex_basecolor())
+            glBindTexture_(GL_TEXTURE_2D, 0, mat.metallic_roughness.tex_base_color);
         geometry_pass_data.shader.set_uniform({
-                {"u_model", MAT4, {._mat4 = m.model_matrix()}},
-                {"u_has_diffuse", INT, {._int = m.tex_diffuse.has}},
-                {"u_kd", VEC3, {._vec3 = m.color_diffuse}},
-                {"u_tex_diffuse", INT, {._int = 0}},
+                {"u_model", m.matrix()},
+                {"u_has_diffuse", mat.has_tex_basecolor()},
+                {"u_kd", glm::vec3(mat.metallic_roughness.base_color)},
+                {"u_tex_diffuse", 0},
         });
         m.mesh.draw();
     }
@@ -326,7 +335,9 @@ void SSR::light_pass()
     for (auto &m: scene)
     {
         light_pass_cfg.shader.set_uniform({
-                {"u_light_mvp", MAT4, {._mat4 = light.proj_matrix * light.view_matrix_get() * m.model_matrix()}},
+                {"u_light_mvp",
+                 MAT4,
+                 {._mat4 = light.proj_matrix * light.view_matrix_get() * m.matrix()}},
         });
         m.mesh.draw();
     }

@@ -6,7 +6,7 @@
 #include <fmt/format.h>
 
 #include "frame-config.hpp"
-#include "core/shader2.h"
+#include "core/shader.h"
 
 
 class Axis

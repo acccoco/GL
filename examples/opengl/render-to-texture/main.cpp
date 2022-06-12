@@ -14,8 +14,8 @@
 #include "config.hpp"
 #include "core/engine.h"
 #include "core/misc.h"
-#include "core/model.h"
 #include "core/texture.h"
+#include "core/import-obj.h"
 
 #include "shader/skybox/skybox.h"
 #include "shader/tex2d-visual/tex-visual.h"
@@ -59,8 +59,8 @@ class EngineTest : public Engine
     ShaderDiffuse   shader_lambert;
     ShaderTexVisual shader_texvisual;
 
-    std::vector<Model> three_objs   = Model::load_obj(MODEL_THREE_OBJS);
-    Model              model_square = Model::load_obj(MODEL_SQUARE)[0];
+    std::vector<RTObject> three_objs   = ImportObj::load_obj(MODEL_THREE_OBJS);
+    RTObject              model_square = ImportObj::load_obj(MODEL_SQUARE)[0];
 
     SkyBox skybox;
 
@@ -69,7 +69,7 @@ class EngineTest : public Engine
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glDepthFunc(GL_LEQUAL);
 
-        shader_lambert.init(Camera::proj_matrix());
+        shader_lambert.init(camera.proj_matrix());
     }
 
     void tick_pre_render() override
@@ -78,7 +78,7 @@ class EngineTest : public Engine
         glViewport(0, 0, framebuffer.WIDTH, framebuffer.HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        skybox.draw_default_sky(camera.view_matrix(), Camera::proj_matrix());
+        skybox.draw_default_sky(camera.view_matrix(), camera.proj_matrix());
 
         shader_lambert.update_per_fame(camera.view_matrix());
         for (auto &m: three_objs)
@@ -89,7 +89,7 @@ class EngineTest : public Engine
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport_(0, 0, window.width, window.height);
+        glViewport(0, 0, Window::framebuffer_width(), Window::framebuffer_height());
 
         shader_texvisual.draw(model_square, framebuffer.tex_color);
     }
@@ -104,6 +104,7 @@ class EngineTest : public Engine
         ImGui::End();
     }
 };
+
 
 int main()
 {

@@ -9,7 +9,6 @@
 
 #include "config.hpp"
 #include "core/engine.h"
-#include "core/model.h"
 
 #include "shader/skybox/skybox.h"
 #include "shader/diffuse/diffuse.h"
@@ -19,7 +18,7 @@ class EngineTest : public Engine
 {
     ShaderDiffuse shader_lambert;
 
-    std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
+    std::vector<RTObject> model_202 = ImportObj::load_obj(MODEL_202_CHAN);
 
     SkyBox        skybox;
     CubeMapVisual visual;
@@ -47,7 +46,7 @@ class EngineTest : public Engine
         glDepthFunc(GL_LEQUAL);
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
 
-        shader_lambert.init(Camera::proj_matrix());
+        shader_lambert.init(camera.proj_matrix());
     }
 
     void tick_render() override
@@ -55,7 +54,7 @@ class EngineTest : public Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // skybox.draw_default_sky(camera.view_matrix(), Camera::proj_matrix());
-        visual.draw_as_skybox(camera.view_matrix(), Camera::proj_matrix(), cube_sky2);
+        visual.draw_as_skybox(camera.view_matrix(), camera.proj_matrix(), cube_sky2);
 
         shader_lambert.update_per_fame(camera.view_matrix());
         for (auto &m: model_202)

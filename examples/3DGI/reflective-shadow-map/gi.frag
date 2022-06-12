@@ -73,7 +73,7 @@ void gen_poisson_disk(vec2 rand_seed)
     float radius= RADIUS_STEP;
 
     for (int i = 0; i < NUM_SAMPLES; ++i) {
-        /// fixme: 修改点的聚集程度
+        /// TODO: 修改点的聚集程度
         poisson_disk[i] = vec2(cos(angle), sin(angle)) * pow(radius, 0.85);
         radius += RADIUS_STEP;
         angle += ANGLE_STEP;
@@ -115,5 +115,5 @@ vec3 indirect_illuminate(vec3 normal, vec2 uv)
     }
 
     return shading_sum * (512.0 * 512.0 / float(NUM_SAMPLES)) / flux_zoom_in * fr;
-    // fixme: 假定所有点的权重都相同
+    // TODO: 假定所有点的权重都相同
 }

@@ -1,6 +1,27 @@
-#include "import-gltf.h"
-#include "misc.h"
-#include "texture.h"
+#include "../import-gltf.h"
+#include "../misc.h"
+#include "../texture.h"
+
+
+ImportGLTF::ImportGLTF(const std::string &filename)
+{
+    tinygltf::TinyGLTF loader;
+    std::string        err, warn;
+
+    SPDLOG_INFO("load gltf file: {}", filename);
+
+    /// 读取文件失败的处理
+    if (!loader.LoadASCIIFromFile(&_gltf, &err, &warn, filename))
+        SPDLOG_ERROR("fail to load gltf file. warn: {}, err: {}", warn, err);
+
+    try
+    {
+        load_scene();
+    } catch (std::exception &ex)
+    {
+        SPDLOG_ERROR("fail to load gltf sceen.");
+    }
+}
 
 
 void ImportGLTF::load_scene()
@@ -39,11 +60,8 @@ void ImportGLTF::load_node(const tinygltf::Node &node, const glm::mat4 &parent_m
     {
         if (node.mesh >= _gltf.meshes.size())
             LOG_AND_THROW("current node is mesh, but idx out of range: {}", node.mesh);
-
-        _obj_list.push_back(RTObj{
-                .matrix = cur_matrix_world,
-                .mesh   = get_mesh(node.mesh),
-        });
+        
+        _obj_list.emplace_back(get_mesh(node.mesh), cur_matrix_world);
     }
 
     /// 子节点
@@ -104,7 +122,6 @@ Material ImportGLTF::get_material(int mat_idx)
 
 
 Material ImportGLTF::create_material(int mat_idx)
-
 {
     const tinygltf::Material &gltf_mat = _gltf.materials[mat_idx];
 
@@ -335,7 +352,7 @@ Mesh2 ImportGLTF::create_mesh(int mesh_idx)
             .vao                  = vao,
             .name                 = gltf_mesh.name,
             .primitive_mode       = primitive.mode,
-            .vertex_cnt           = index_accessor.count,
+            .index_cnt            = index_accessor.count,
             .index_component_type = index_accessor.componentType,
             .index_offset         = index_accessor.byteOffset,
             .mat                  = mat,

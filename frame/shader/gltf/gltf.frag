@@ -47,7 +47,7 @@ void main()
     /// occlused basecolor 
     if (u_has_occlusion) {
         float occlusion = texture(u_tex_occlusion, vs_fs.texcoord_0).r;
-        basecolor = mix(basecolor, basecolor * occlusion, u_occlusion_strength);
+        basecolor.rgb = mix(basecolor.rgb, basecolor.rgb * occlusion, u_occlusion_strength);
     }
 
     /// emissive 
@@ -79,5 +79,7 @@ void main()
         phong_color = diffuse + specular;
     }
 
-    out_color = vec4(phong_color + emissive, 1.0);
+    /// 丢弃透明的
+    if (basecolor.a < 0.1) discard;
+    out_color = vec4(phong_color + emissive, basecolor.a);
 }

@@ -2,14 +2,14 @@
 #include "core/misc.h"
 #include "core/engine.h"
 #include "config.hpp"
-#include "core/shader2.h"
+#include "core/shader.h"
 #include "shader/diffuse/diffuse.h"
 #include "core/import-gltf.h"
 
 
 class TestGLTF : public Engine
 {
-    std::vector<RTObj> obj_list;
+    std::vector<RTObject> obj_list;
 
     Shader2 shader_base = {SHADER + "base/base.vert", SHADER + "base/base.frag"};
     Shader2 shader_gltf = {SHADER + "gltf/gltf.vert", SHADER + "gltf/gltf.frag"};
@@ -20,8 +20,9 @@ class TestGLTF : public Engine
         //        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         //        CHECK_GL_ERROR();
 
-        ImportGLTF gltf = ImportGLTF{MODEL + "dancing-girl/scene.gltf"};
+        // ImportGLTF gltf = ImportGLTF{MODEL + "dancing-girl/scene.gltf"};
         // GLTF gltf = GLTF {EXAMPLE_CUR_PATH + "test-gltf/test.gltf"};
+        ImportGLTF gltf = ImportGLTF{"/Users/qizhengjie/Library/Mobile Documents/com~apple~CloudDocs/常用3D模型/warrior_girl/scene.gltf"};
         obj_list = gltf.get_obj_list();
     }
 
@@ -31,11 +32,11 @@ class TestGLTF : public Engine
 
         shader_base.set_uniform({
                 {"u_camera_pos", camera.get_pos()},
-                {"u_vp", Camera::proj_matrix() * camera.view_matrix()},
+                {"u_vp", camera.proj_matrix() * camera.view_matrix()},
         });
 
         shader_gltf.set_uniform({
-                {"u_proj", Camera::proj_matrix()},
+                {"u_proj", camera.proj_matrix()},
 
                 {"u_light_pos", glm::vec3(2.f, 4.f, 2.f)},
                 {"u_light_color", glm::vec3(0.7f)},
@@ -49,7 +50,7 @@ class TestGLTF : public Engine
             // shader_base.set_uniform({{"u_model", obj.matrix}});
 
             shader_gltf.set_uniform({
-                    {"u_model_view", camera.view_matrix() * obj.matrix},
+                    {"u_model_view", camera.view_matrix() * obj.matrix()},
 
                     {"u_basecolor", mat.metallic_roughness.base_color},
                     {"u_has_basecolor", (int) mat.has_tex_basecolor()},
@@ -77,7 +78,7 @@ class TestGLTF : public Engine
                 glBindTexture_(GL_TEXTURE_2D, 3, mat.tex_normal);
 
             glBindVertexArray(mesh.vao);
-            glDrawElements(mesh.primitive_mode, (GLsizei) mesh.vertex_cnt,
+            glDrawElements(mesh.primitive_mode, (GLsizei) mesh.index_cnt,
                            mesh.index_component_type, (void *) mesh.index_offset);
             CHECK_GL_ERROR();
         }

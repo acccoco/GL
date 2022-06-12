@@ -7,7 +7,6 @@
 #include "config.hpp"
 #include "core/engine.h"
 #include "core/mesh.h"
-#include "core/model.h"
 #include "core/shader.h"
 #include "functions/axis.h"
 
@@ -30,35 +29,28 @@ struct {
 } UBSimple;
 
 
-class ShaderDiffuse : public Shader
+class ShaderDiffuse
 {
+    Shader2 shader = {EXAMPLE_CUR_PATH + "shader/diffuse.vert",
+                      EXAMPLE_CUR_PATH + "shader/diffuse.frag"};
+
 public:
-    UniformAttribute m_model     = {"m_model", this, UniAttrType::MAT4};
-    UniformAttribute has_diffuse = {"has_diffuse", this, UniAttrType::INT};
-    UniformAttribute tex_diffuse = {"tex_diffuse", this, UniAttrType::INT};
-    UniformAttribute kd          = {"kd", this, UniAttrType::VEC3};
-
     ShaderDiffuse()
-        : Shader(EXAMPLES + "opengl/uniform-block/shader/diffuse.vert", EXAMPLES + "opengl/uniform-block/diffuse.frag")
     {
-        this->uniform_attrs_location_init();
-
-        GLuint UBSimple_index = glGetUniformBlockIndex(program_id, "UBSimple");
-        glUniformBlockBinding(program_id, UBSimple_index, UBSimple.bounding_point);
+        GLuint UBSimple_index = glGetUniformBlockIndex(shader.get_program_id(), "UBSimple");
+        glUniformBlockBinding(shader.get_program_id(), UBSimple_index, UBSimple.bounding_point);
     }
 
-    void draw(const Model &m)
+    void draw(const RTObject &m)
     {
-        if (m.tex_diffuse.has)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, m.tex_diffuse.id);
-        }
-        this->set_uniform({
-                {m_model, {._mat4 = m.model_matrix()}},
-                {has_diffuse, {._int = m.tex_diffuse.has}},
-                {kd, {._vec3 = m.color_diffuse}},
-                {tex_diffuse, {._int = 0}},
+        const Material &mat = m.mesh.mat;
+        if (mat.has_tex_basecolor())
+            glBindTexture_(GL_TEXTURE_2D, 0, mat.metallic_roughness.tex_base_color);
+        shader.set_uniform({
+                {"m_model", m.matrix()},
+                {"has_diffuse", mat.has_tex_basecolor()},
+                {"kd", glm::vec3(mat.metallic_roughness.base_color)},
+                {"tex_diffuse", 0},
         });
 
         m.mesh.draw();
@@ -75,7 +67,7 @@ class EngineTest : public Engine
     Axis axis;
 
     /// model
-    std::vector<Model> model_diona = Model::load_obj(MODEL_DIONA);
+    std::vector<RTObject> model_diona = ImportObj::load_obj(MODEL_DIONA);
 
     /// shader
     ShaderDiffuse shader_diffuse;
@@ -92,7 +84,7 @@ class EngineTest : public Engine
         /// 为 uniform block UBSimple 设置初始值
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_simple);
         glBufferSubData(GL_UNIFORM_BUFFER, UBSimple.m_proj.offset, UBSimple.m_proj.size,
-                        glm::value_ptr(Camera::proj_matrix()));
+                        glm::value_ptr(camera.proj_matrix()));
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_simple);
     }
 
@@ -112,7 +104,7 @@ class EngineTest : public Engine
         for (auto &m: model_diona)
             shader_diffuse.draw(m);
 
-        axis.draw(Camera::proj_matrix() * camera.view_matrix());
+        axis.draw(camera.proj_matrix() * camera.view_matrix());
     }
 
     void tick_gui() override {}

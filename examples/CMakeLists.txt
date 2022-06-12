@@ -8,6 +8,11 @@
 
 # 利用 m4 预处理 glsl 代码
 function(preprocess_shader source_dir target_dir out_shaders)
+    # 检查一下全局变量是否有效
+    if (${RT_SHADER_INCLUDE} STREQUAL "")
+        message(FATAL_ERROR "variable RT_SHADER_INCLUDE is null string")
+    endif()
+
     # 确保目标文件夹存在
     if ((NOT EXISTS ${target_dir}) OR (NOT IS_DIRECTORY ${target_dir}))
         file(MAKE_DIRECTORY ${target_dir})
@@ -31,7 +36,8 @@ function(preprocess_shader source_dir target_dir out_shaders)
 endfunction()
 
 
-file(GLOB major_path_list ${RT_EXAMPLES_DIR}/*)
+# 遍历所有的文件夹，将所有的 minor 层级添加为 target
+file(GLOB major_path_list ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach (major_path ${major_path_list})
     # 排除非文件夹
     if (NOT IS_DIRECTORY ${major_path})
@@ -57,7 +63,7 @@ foreach (major_path ${major_path_list})
 
         # 确定 target 的名称
         get_filename_component(minor_name ${minor_path} NAME)
-        set(target_name ${major_name}.${minor_name})
+        set(target_name "${major_name}.${minor_name}")
 
         # build target
         add_executable(${target_name} ${minor_path}/main.cpp ${shader_list})

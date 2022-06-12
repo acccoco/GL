@@ -11,20 +11,17 @@
 #include "core/engine.h"
 #include "core/mesh.h"
 #include "core/misc.h"
-#include "core/model.h"
 #include "core/texture.h"
 
 #include "shader/tex2d-visual/tex-visual.h"
 #include "shader/diffuse/diffuse.h"
 #include "shader/blinn-phong/blinn-phong.h"
 
-#include "./shader.h"
-
 
 struct DepthFramebuffer {
-    GLuint frame_buffer{};
-    GLuint depth_buffer;
-    GLuint shadow_map;
+    GLuint        frame_buffer{};
+    GLuint        depth_buffer;
+    GLuint        shadow_map;
     const GLsizei size = 1024;
 
     DepthFramebuffer()
@@ -33,7 +30,8 @@ struct DepthFramebuffer {
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
         depth_buffer = create_depth_buffer(size, size);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                                  depth_buffer);
 
         shadow_map = new_tex2d({
                 .width           = size,
@@ -54,30 +52,33 @@ class TestEngine : public Engine
 {
     DepthFramebuffer buffer;
 
-    std::vector<Model> model_three_obj = Model::load_obj(MODEL_THREE_OBJS);
-    std::vector<Model> model_matrix = Model::load_obj(MODEL_SPHERE_MATRIX);
-    std::vector<Model> model_202 = Model::load_obj(MODEL_202_CHAN);
-    std::vector<Model> model_diona = Model::load_obj(MODEL_DIONA);
-    Model model_cube = Model::load_obj(MODEL_CUBE)[0];
-    Model model_light = Model::load_obj(MODEL_LIGHT)[0];
-    Model model_floor = Model::load_obj(MODLE_FLOOR)[0];
-    Model model_gray_floor = Model::load_obj(MODEL_GRAY_FLOOR)[0];
-    Model model_square = Model::load_obj(MODEL_SQUARE)[0];
+    std::vector<RTObject> model_three_obj  = ImportObj::load_obj(MODEL_THREE_OBJS);
+    std::vector<RTObject> model_matrix     = ImportObj::load_obj(MODEL_SPHERE_MATRIX);
+    std::vector<RTObject> model_202        = ImportObj::load_obj(MODEL_202_CHAN);
+    std::vector<RTObject> model_diona      = ImportObj::load_obj(MODEL_DIONA);
+    RTObject              model_cube       = ImportObj::load_obj(MODEL_CUBE)[0];
+    RTObject              model_light      = ImportObj::load_obj(MODEL_LIGHT)[0];
+    RTObject              model_floor      = ImportObj::load_obj(MODLE_FLOOR)[0];
+    RTObject              model_gray_floor = ImportObj::load_obj(MODEL_GRAY_FLOOR)[0];
+    RTObject              model_square     = ImportObj::load_obj(MODEL_SQUARE)[0];
 
-    ShaderDepth shader_depth;
-    ShaderPcss shader_pcss;
-    ShaderDiffuse shader_lambert;
+    Shader2          shader_depth = {EXAMPLE_CUR_PATH + "shader/depth.vert",
+                                     EXAMPLE_CUR_PATH + "shader/depth.frag"};
+    Shader2          shader_pcss  = {EXAMPLE_CUR_PATH + "shader/pcss.vert",
+                                     EXAMPLE_CUR_PATH + "shader/pcss.frag"};
+    ShaderDiffuse    shader_lambert;
     ShaderBlinnPhong shader_phong;
-    ShaderTexVisual shader_texvisual;
+    ShaderTexVisual  shader_texvisual;
 
-    int scene_switcher = 0;
+    int                   scene_switcher = 0;
+    std::vector<RTObject> scene;
 
     struct {
-        Model model = Model::load_obj(MODEL_LIGHT)[0];
-        glm::vec3 shadow_map_dir = {1, 2, 3};
+        RTObject                model          = ImportObj::load_obj(MODEL_LIGHT)[0];
+        glm::vec3               shadow_map_dir = {1, 2, 3};
         [[nodiscard]] glm::mat4 get_view() const
         {
-            return glm::lookAt(model.pos, {0, 0, 0}, POSITIVE_Y);
+            return glm::lookAt(model.position(), {0, 0, 0}, POSITIVE_Y);
         }
         glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.0f, 0.1f, 50.0f);
     } light;
@@ -86,9 +87,9 @@ class TestEngine : public Engine
     {
         glClearColor(0.6, 0.6, 0.6, 1.0);
 
-        shader_lambert.init(Camera::proj_matrix());
-        light.model.pos = {-5.8, 5.8, 3.5};
-        shader_phong.init(Camera::proj_matrix());
+        shader_lambert.init(camera.proj_matrix());
+        light.model.set_pos({-5.8, 5.8, 3.5});
+        shader_phong.init(camera.proj_matrix());
     }
 
     void tick_pre_render() override
@@ -97,26 +98,28 @@ class TestEngine : public Engine
         glViewport(0, 0, buffer.size, buffer.size);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader_depth.update_per_frame(light.get_view(), light.proj);
-        switch (scene_switcher) {
+        shader_depth.set_uniform({
+                {"m_view", light.get_view()},
+                {"m_proj", light.proj},
+        });
+        switch (scene_switcher)
+        {
             case 0:
-                for (auto &m: model_diona)
-                    shader_depth.draw(m);
-                shader_depth.draw(model_floor);
+                scene = model_diona;
+                scene.push_back(model_floor);
                 break;
-            case 1:
-                for (auto &m: model_matrix)
-                    shader_depth.draw(m);
-                break;
-            case 2:
-                for (auto &m: model_three_obj)
-                    shader_depth.draw(m);
-                break;
+            case 1: scene = model_matrix; break;
+            case 2: scene = model_three_obj; break;
             case 3:
-                for (auto &m: model_202)
-                    shader_depth.draw(m);
-                shader_depth.draw(model_gray_floor);
-            default:;
+                scene = model_202;
+                scene.push_back(model_gray_floor);
+                break;
+            default: scene = {};
+        }
+        for (const auto &m: scene)
+        {
+            shader_depth.set_uniform({{"m_model", m.matrix()}});
+            m.mesh.draw();
         }
 
         glBindTexture(GL_TEXTURE_2D, buffer.shadow_map);
@@ -126,49 +129,58 @@ class TestEngine : public Engine
     void tick_render() override
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport_(0, 0, window.width, window.height);
+        glViewport(0, 0, Window::framebuffer_width(), Window::framebuffer_width());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader_pcss.udpate_per_frame(camera.view_matrix(), Camera::proj_matrix(), light.proj * light.get_view(),
-                                     light.model.pos, camera.get_pos());
+        shader_pcss.set_uniform({
+                {"m_view", camera.view_matrix()},
+                {"m_proj", camera.proj_matrix()},
+                {"light_vp", light.proj * light.get_view()},
+                {"light_pos", light.model.position()},
+                {"camera_pos", camera.get_pos()},
+                {"rand_seed", glm::vec3(std::rand(), std::rand(), 0)},
+        });
 
-        switch (scene_switcher) {
-            case 0:
-                for (auto &m: model_diona)
-                    shader_pcss.draw(m, buffer.shadow_map);
-                shader_pcss.draw(model_floor, buffer.shadow_map);
-                break;
-            case 1:
-                for (auto &m: model_matrix)
-                    shader_pcss.draw(m, buffer.shadow_map);
-                break;
-            case 2:
-                for (auto &m: model_three_obj)
-                    shader_pcss.draw(m, buffer.shadow_map);
-                break;
-            case 3:
-                for (auto &m: model_202)
-                    shader_pcss.draw(m, buffer.shadow_map);
-                shader_pcss.draw(model_gray_floor, buffer.shadow_map);
-            default:;
+        glBindTexture_(GL_TEXTURE_2D, 0, buffer.shadow_map);
+        for (const auto &m: scene)
+        {
+            const Material &mat = m.mesh.mat;
+            if (mat.has_tex_basecolor())
+                glBindTexture_(GL_TEXTURE_2D, 1, mat.metallic_roughness.tex_base_color);
+            shader_pcss.set_uniform({
+                    {"kd", glm::vec3(mat.metallic_roughness.base_color)},
+                    {"ks", glm::vec3(0.3f)},
+                    {"has_diffuse", mat.has_tex_basecolor()},
+                    {"tex_diffuse", 1},
+                    {"shadow_map", 0},
+                    {"m_model", m.matrix()},
+            });
+            m.mesh.draw();
         }
 
         shader_lambert.update_per_fame(camera.view_matrix());
         shader_lambert.draw(light.model);
 
         // debug visual shadow map
-        glViewport_(0, 0, window.width / 4, window.height / 4);
+        glViewport(0, 0, Window::framebuffer_width() / 4, Window::framebuffer_height() / 4);
         shader_texvisual.draw(model_square, buffer.shadow_map);
     }
 
     void tick_gui() override
     {
         ImGui::Begin("setting");
-        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y, camera.get_pos().z);
-        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw, camera.get_euler().pitch);
-        ImGui::SliderFloat("light pos x", &light.model.pos.x, -10.f, 10.f);
-        ImGui::SliderFloat("light pos y", &light.model.pos.y, -10.f, 10.f);
-        ImGui::SliderFloat("light pos z", &light.model.pos.z, -10.f, 10.f);
+        ImGui::Text("camera pos: (%.2f, %.2f, %.2f)", camera.get_pos().x, camera.get_pos().y,
+                    camera.get_pos().z);
+        ImGui::Text("camera eular: (yaw = %.2f, pitch = %.2f)", camera.get_euler().yaw,
+                    camera.get_euler().pitch);
+
+        {
+            glm::vec3 pos = light.model.position();
+            ImGui::SliderFloat("light pos x", &pos.x, -10.f, 10.f);
+            ImGui::SliderFloat("light pos y", &pos.y, -10.f, 10.f);
+            ImGui::SliderFloat("light pos z", &pos.z, -10.f, 10.f);
+            light.model.set_pos(pos);
+        }
         ImGui::SliderInt("scene switcher", &scene_switcher, 0, 3);
         ImGui::End();
     }

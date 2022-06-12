@@ -39,10 +39,8 @@ set(LIB_LINKS
         ${IOKIT_LIBRARY})
 
 
-add_library(frame STATIC
-        core/shader.cpp
-        core/texture.cpp
-        core/import-gltf.cpp)
+file(GLOB all_cpps ${CMAKE_CURRENT_SOURCE_DIR}/core/src/*.cpp)
+add_library(frame STATIC ${all_cpps})
 target_compile_definitions(frame PRIVATE FRAME)
 
 
